@@ -234,6 +234,8 @@ def generate(binary: str, source: Path, target: Path, work: Any,
     command += ["-i", str(source), "-frames:v", "1", "-vf",
                 "scale=640:640:force_original_aspect_ratio=decrease",
                 "-f", "image2pipe", "-vcodec", codec, "pipe:1"]
+    if codec == "mjpeg":
+        command[-1:-1] = ["-pix_fmt", "yuvj420p"]
     temporary = None
     try:
         with tempfile.NamedTemporaryFile(dir=target.parent, suffix=target.suffix,
@@ -243,6 +245,16 @@ def generate(binary: str, source: Path, target: Path, work: Any,
                            stderr=subprocess.DEVNULL, check=True, timeout=15,
                            creationflags=NO_WINDOW)
             output.flush()
+            if os.fstat(output.fileno()).st_size == 0 and "-ss" in command:
+                first_frame = list(command)
+                seek = first_frame.index("-ss")
+                del first_frame[seek:seek + 2]
+                output.seek(0)
+                output.truncate()
+                subprocess.run(first_frame, stdin=subprocess.DEVNULL, stdout=output,
+                               stderr=subprocess.DEVNULL, check=True, timeout=15,
+                               creationflags=NO_WINDOW)
+                output.flush()
             if os.fstat(output.fileno()).st_size == 0:   # e.g. a clip shorter than the seek
                 raise subprocess.SubprocessError("ffmpeg 没有抽出画面")
         # closed before the move: Windows cannot rename an open file
