@@ -23,6 +23,9 @@ class DesktopLinkTest(unittest.TestCase):
 
     def setUp(self) -> None:
         self.launcher = load_launcher()
+        desktop_platform = patch.object(self.launcher, "WINDOWS", False)
+        desktop_platform.start()
+        self.addCleanup(desktop_platform.stop)
         self.temp = tempfile.TemporaryDirectory()
         base = Path(self.temp.name)
         self.target = base / "软件" / "工作区"

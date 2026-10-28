@@ -137,7 +137,9 @@ class UploadTests(unittest.TestCase):
     def test_credentials_private_and_no_secret_in_api(self):
         result = uploads.configure('test-private-api-key')
         self.assertTrue(result['provider']['configured'])
-        self.assertEqual(stat.S_IMODE((self.root/'provider.json').stat().st_mode), 0o600)
+        self.assertTrue((self.root/'provider.json').is_file())
+        if os.name != 'nt':  # NTFS permissions are ACLs, not POSIX mode bits.
+            self.assertEqual(stat.S_IMODE((self.root/'provider.json').stat().st_mode), 0o600)
         self.assertNotIn('test-private-api-key', json.dumps(uploads.snapshot()))
         self.assertEqual(result['provider']['endpoint'], uploads.ENDPOINT)
         uploads.configure('')
