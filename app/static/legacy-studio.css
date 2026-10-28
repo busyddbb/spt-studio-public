@@ -1,0 +1,916 @@
+/* SPT · 工具页（编辑内容、账号档案、发布日历……）
+   Same look as the SPT window, "夜灯小幽灵": solid colours, no backdrop blur, no layered gradients.
+   The base stylesheets read the --studio-* tokens below; this sheet loads last and sets the shared
+   geometry (pill buttons, 14px fields, 22px panels) and the one selected state (solid accent).
+   Motion: transform/opacity only; colour changes are instant. */
+
+/* ---------- Tokens (match spt/ui/spt.css) ---------- */
+:root {
+  color-scheme: dark;
+  --studio-canvas: #1b1829;
+  --studio-surface: #262139;       /* panels */
+  --studio-overlay: #2e2846;       /* buttons, toasts, popovers */
+  --studio-subtle: #211d32;        /* wells and fields */
+  --studio-hover: #352f4f;
+  --studio-media: #161322;
+  --studio-text: #f3efff;
+  --studio-muted: #b9b0d8;
+  --studio-faint: #a59ec2;
+  --studio-line: rgb(201 184 255 / 12%);
+  --studio-line-strong: rgb(201 184 255 / 24%);
+  --studio-field-border: #7a6fa3;  /* fields: 3:1 against the page */
+  --studio-accent: #c9b8ff;
+  --studio-accent-bg: #3a3160;
+  --studio-accent-hover: #ddd2ff;
+  --studio-accent-ink: #1e1b2e;
+  --studio-green: #9fe6d0;
+  --studio-green-bg: #22403a;
+  --studio-amber: #ffd37a;
+  --studio-amber-bg: #3d3424;
+  --studio-red: #ffb0c0;
+  --studio-red-bg: #45283a;
+  --studio-backdrop: rgb(12 9 24 / 58%);
+  --studio-shadow: 0 10px 30px rgb(8 5 20 / 45%);
+  --studio-radius: 14px;
+  --studio-field-radius: 10px;
+  --studio-panel-radius: 22px;
+  --studio-font: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  /* Names the legacy stylesheets still use. */
+  --navy: var(--studio-subtle);
+  --navy-2: var(--studio-hover);
+  --ink: var(--studio-text);
+  --muted: var(--studio-muted);
+  --line: var(--studio-line);
+  --paper: var(--studio-canvas);
+  --white: var(--studio-surface);
+  --blue: var(--studio-accent);
+  --blue-soft: var(--studio-accent-bg);
+  --lime: var(--studio-accent);
+  --green: var(--studio-green);
+  --orange: var(--studio-amber);
+  --shadow: none;
+  --radius: var(--studio-radius);
+  font-family: var(--studio-font);
+  color: var(--studio-text);
+}
+/* 白天 */
+html[data-theme="light"] {
+  color-scheme: light;
+  --studio-canvas: #f6f3ff;
+  --studio-surface: #ffffff;
+  --studio-overlay: #ffffff;
+  --studio-subtle: #efeafc;
+  --studio-hover: #e6defb;
+  --studio-media: #ece7fb;
+  --studio-text: #2a2440;
+  --studio-muted: #574d7e;
+  --studio-faint: #665c8d;
+  --studio-line: rgb(74 58 140 / 14%);
+  --studio-line-strong: rgb(74 58 140 / 28%);
+  --studio-field-border: #8378a8;
+  --studio-accent: #6548c8;
+  --studio-accent-bg: #e9e2ff;
+  --studio-accent-hover: #5536b8;
+  --studio-accent-ink: #ffffff;
+  --studio-green: #276b56;
+  --studio-green-bg: #ddf5ec;
+  --studio-amber: #8a6416;
+  --studio-amber-bg: #fbefd2;
+  --studio-red: #b23a5a;
+  --studio-red-bg: #fde4ea;
+  --studio-shadow: 0 10px 30px rgb(60 40 120 / 14%);
+}
+
+/* ---------- Page ---------- */
+html, body { background: var(--studio-canvas); }
+body { color: var(--studio-text); font-family: var(--studio-font); font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+.app-shell { background: var(--studio-canvas); }
+.main-shell, main { background: transparent; }
+::selection { color: var(--studio-text); background: var(--studio-accent-bg); }
+:is(button, a, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 3px solid var(--studio-accent);
+  outline-offset: 3px;
+}
+html .mc-workspace :is(button, a, input, select):focus-visible, html .mc-scroll-grid:focus-visible,
+html .ml-page :is(.button, button, input, select):focus-visible {
+  outline: 3px solid var(--studio-accent);
+  outline-offset: 3px;
+}
+/* Search boxes draw the ring on the box, not on the bare input inside. */
+.ml-search:focus-within { outline: 3px solid var(--studio-accent); outline-offset: 3px; }
+.ml-search input:focus-visible { outline: 0; }
+
+/* Kickers and eyebrows: the SPT window titles pages with the name only. */
+.planning-kicker { display: none !important; }
+
+/* ---------- Standalone chrome (hidden when shown inside SPT) ---------- */
+.studio-wordmark { display: block; width: 46px; aspect-ratio: 230 / 186; background: currentColor; -webkit-mask: url('/workspace/brand/spt-wordmark.svg') left center / contain no-repeat; mask: url('/workspace/brand/spt-wordmark.svg') left center / contain no-repeat; }
+.studio-nav-icon { width: 18px; height: 18px; flex: 0 0 18px; background: currentColor; -webkit-mask: var(--nav-icon) center / contain no-repeat; mask: var(--nav-icon) center / contain no-repeat; }
+.studio-nav-desk { --nav-icon: url('/workspace/icons/squares-four.svg'); }
+.studio-nav-works { --nav-icon: url('/workspace/icons/folder-open.svg'); }
+.studio-nav-analytics { --nav-icon: url('/workspace/icons/chart-line.svg'); }
+.studio-nav-intelligence { --nav-icon: url('/workspace/icons/file-text.svg'); }
+.studio-nav-publish { --nav-icon: url('/workspace/icons/arrow-square-out.svg'); }
+.studio-nav-settings { --nav-icon: url('/workspace/icons/gear-six.svg'); }
+.legacy-settings-nav { margin-top: auto; padding-top: 12px; }
+.legacy-tools { margin-top: 20px; min-height: 0; }
+.legacy-tools > summary { cursor: pointer; padding: 10px 12px; font-size: 12px; color: var(--studio-muted); }
+.legacy-tools[open] > summary { color: var(--studio-text); }
+.legacy-tools > nav { margin-top: 5px; }
+.topbar { height: 60px; }
+@media (min-width: 851px) {
+  .app-shell { grid-template-columns: 176px minmax(0, 1fr); }
+  .sidebar { width: 176px; padding: 20px 12px 16px; overflow-y: auto; }
+  .sidebar .brand { font-size: 17px; letter-spacing: -.3px; align-items: center; padding: 0 8px; margin-bottom: 26px; }
+  .sidebar nav a { gap: 10px; }
+  .sidebar-bottom { margin-top: auto; padding-top: 20px; }
+}
+@media (min-width: 601px) and (max-width: 850px) {
+  .legacy-tools > summary { padding-inline: 2px; font-size: 12px; text-align: center; }
+}
+@media (max-width: 600px) {
+  .sidebar { flex-direction: row; align-items: center; }
+  .sidebar #main-nav { flex: 1; min-width: 0; }
+  .sidebar #main-nav a { flex-basis: 58px; }
+  .legacy-tools { margin: 0; flex: 0 0 62px; }
+  .legacy-tools > summary { padding: 8px 3px; font-size: 12px; text-align: center; }
+  .legacy-tools > nav {
+    position: absolute; right: 8px; bottom: 70px; display: flex; flex-direction: column; align-items: stretch;
+    width: 184px; height: auto; max-height: 65vh; overflow-y: auto; padding: 8px;
+    border: 1px solid var(--studio-line); border-radius: var(--studio-radius); background: var(--studio-overlay); box-shadow: var(--studio-shadow);
+  }
+  .legacy-tools > nav a { flex: none; flex-direction: row; justify-content: flex-start; padding: 10px; }
+}
+.sidebar, .topbar { color: var(--studio-muted); background: var(--studio-subtle); border-color: var(--studio-line); }
+.brand, .brand-light, .breadcrumb strong { color: var(--studio-text); }
+.brand small, .workspace-label small, .sidebar-bottom, .sidebar-bottom small, .nav-caption, .breadcrumb,
+.crumb-slash, .local-status, .main-footer, .footer-divider { color: var(--studio-faint); }
+.workspace-label, .sidebar-note, .topbar-search { color: var(--studio-muted); background: var(--studio-subtle); border-color: var(--studio-line); }
+.topbar-search { border-radius: 999px; }
+.workspace-avatar, .profile-avatar { color: var(--studio-accent); background: var(--studio-accent-bg); border-color: var(--studio-line); box-shadow: none; }
+.local-dot, .privacy-indicator, .local-status i, .workspace-health i { background: var(--studio-green); }
+.sidebar nav a { color: var(--studio-muted); border-radius: 999px; }
+.sidebar nav a:hover { color: var(--studio-text); background: var(--studio-hover); }
+.sidebar nav a.active, .sidebar nav a.active:hover { color: var(--studio-accent-ink); background: var(--studio-accent); box-shadow: none; }
+.nav-count { color: var(--studio-accent); background: var(--studio-accent-bg); }
+.sidebar nav a.active .nav-count { color: var(--studio-accent-ink); background: transparent; }
+.sidebar-note .spark-mark, .sidebar-note strong, .sidebar-note p, .sidebar-note a, .workspace-health,
+.workspace-health strong, .workspace-health p, .workspace-health small { color: var(--studio-muted); }
+.workspace-health { border-color: var(--studio-line); }
+.icon-button { color: var(--studio-muted); border-radius: 999px; }
+.topbar-search:hover, .icon-button:hover { color: var(--studio-text); background: var(--studio-hover); border-color: var(--studio-line-strong); }
+.topbar-search kbd { color: var(--studio-muted); }
+
+/* ---------- Page titles ---------- */
+.page-header, .compact-header, .mc-intro, .planning-header {
+  margin: 4px 0 20px;
+  min-height: 42px;
+  gap: 16px;
+}
+.compact-header, .mc-intro { align-items: center; }
+/* Title left, actions right, at every width (the base sheets stacked them under 1020px). */
+.page-header, .compact-header { display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; }
+/* The editor's side column holds the preview and the AI helper one under the other. */
+.composer-layout .studio-preview { display: block; }
+.composer-layout .studio-preview > * + * { margin-top: 12px; }
+/* Editor sections are split by one line, not a line, a gap and a second line. */
+.composer-panel .form-section + .form-section { margin-top: 0; border-top: 0; }
+.page-header h1, .compact-header h1, .mc-intro h1, .planning-header h1, .ml-heading h1, .desk-empty h1 {
+  margin: 0;
+  color: var(--studio-text);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  line-height: 1.2;
+}
+.page-header p, .planning-header p {
+  margin: 4px 0 0;
+  color: var(--studio-muted);
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 640px;
+}
+.header-actions, .compact-header .header-actions { width: auto; margin-left: auto; padding-top: 0; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.header-actions .button { padding: 7px 14px; }
+.mc-date-navigation h2, .planning-side-card h2, .planning-plan-intro h2 { font-weight: 600; letter-spacing: -.01em; }
+/* Section titles outside panels, panel titles, card titles. */
+.desk-section-heading h2, .planning-section-heading h2, .publish-targets .desk-section-heading h2 {
+  font-size: 17px; font-weight: 600; letter-spacing: 0; color: var(--studio-text);
+}
+.panel-heading h2, .composer-section-head h2, .planning-panel-heading h2, .form-section-title,
+.composer-layout .preview-label h2, .preview-shell .preview-label h2, .ml-upload-copy h2, .publish-content-heading h2, .publish-list-top h2,
+.settings-row h2, .mc-dialog-header h2, .dialog-heading h2, .account-group .panel-heading h2,
+.error-state h2, .planning-empty h2 {
+  font-size: 16px; font-weight: 600; letter-spacing: 0; color: var(--studio-text);
+}
+.desk-project h3, .account-details h3, .draft-card h3, .planning-question-card h3, .planning-plan-card h3,
+.planning-review-card h3, .ml-card-title h3, .publish-target-heading h3, .settings-platform h3,
+.connection-card h3, .mc-empty h3, .ml-empty h3, .planning-empty h3, .section-empty h3, .finding h3,
+.analysis-empty h3, .planning-side-card h3 {
+  font-size: 14px; font-weight: 600; color: var(--studio-text);
+}
+
+/* ---------- Text colours: headings bright, descriptions muted ---------- */
+.desk-stat > strong, .desk-draft-row h3, .desk-inline-empty strong, .desk-empty h2, .desk-empty h3,
+.publish-session-accounts strong, .settings-details > summary, .publish-pick strong,
+.publish-media-list strong, .publish-receipt-heading strong, .composer-layout .preview-account strong,
+.composer-layout .preview-body strong, .preview-body strong, .table-title,
+.draft-date strong, .preview-account strong, .quick-guide h3, .api-card h2,
+.additional-connector strong, .media-select h2, .media-file-main h3, .media-provider summary,
+.planning-workspace h1, .planning-workspace h2, .planning-workspace h3, .mc-day-number, .mc-card-open, .mc-preview h3, .ml-card-title h3 {
+  color: var(--studio-text);
+}
+.page-header p, .panel-heading p, .panel-heading .label, .desk-stat > span, .desk-kind, .desk-edit-link,
+.desk-project-summary, .desk-project-details, .desk-project-details summary, .desk-project-details p,
+.desk-project-details small, .desk-project-details .desk-project-path, .desk-project-types button,
+.desk-draft-row p, .desk-today-line, .desk-section-heading p, .desk-inline-empty, .desk-inline-empty p,
+.desk-empty p, .desk-tools, .desk-tools summary, .desk-tools p, .publish-help, .publish-help summary, .publish-help p, .publish-list-top h2 span,
+.publish-pick small, .publish-metadata, .publish-content-heading small, .publish-media-list small,
+.publish-media-number, .publish-target-heading p, .publish-receipt-heading div > span,
+.publish-session-accounts small, .account-details > p, .session-chip, .account-session-label,
+.publish-checklist label, .publish-more, .publish-binding-footer, .publish-account-info,
+.publish-account-info p, .publish-receipt-form, .publish-required, .publish-receipt-note,
+.publish-metrics > summary, .publish-metrics > summary > span, .metrics-form p, .publish-void,
+.account-source-details, .account-source-details summary, .account-source-details p,
+.account-details .account-notes, .account-form-notes, .editor-project-label,
+.composer-handoff.composer-handoff-compact, .composer-media-order, .settings-row p, .settings-details-body,
+.settings-platform p, .field-label, .composer-panel .field-label,
+.composer-panel .field-label small, .composer-panel .field-help, .composer-optional,
+.composer-editor-tools, .composer-local,
+.composer-layout .preview-account small, .composer-layout .preview-social, .preview-social,
+.composer-layout .preview-footnote, .preview-footnote, .draft-card p, .draft-meta small, .draft-date,
+.connection-card p, .table-sub, .table-footer, .field-help, .guide-step p,
+.section-empty p, .source-empty,
+.account-row-actions small, .api-card p, .separator-note, .research-recommendation,
+.additional-connector p, .media-select p, .media-file-main p, .media-path, .media-provider p,
+#media-provider-status, .planning-header p, .planning-account > span, .planning-progress span,
+.planning-progress small, .planning-panel-heading p, .planning-field small, .planning-muted,
+.planning-question-card > p, .planning-question-source, .planning-empty p, .planning-plan-intro > p,
+.planning-inline-note, .planning-card-question, .planning-observation-meta,
+.planning-review-action > span, .planning-review-result > p, .planning-limitations,
+.planning-ai-body > p, .planning-source, .planning-source a, .finding p, .media-guide li strong,
+.media-guide li span, .media-provider summary span, .media-progress span, .planning-field > span,
+.planning-account small, .planning-progress i, .planning-field em, .planning-mini-path b,
+.planning-side-card p, .planning-side-card li, .planning-ai summary, .planning-ai summary strong,
+.planning-ai summary small, .planning-ai summary span, .mc-timezone,
+.mc-summary span, .mc-summary-scope, .mc-weekday, .mc-card-time, .mc-card-meta, .mc-card-excerpt,
+.mc-platform, .mc-range-empty, .mc-calendar-footer, .mc-unscheduled-toggle, .mc-unscheduled-empty, .mc-day-empty, .mc-preview-account,
+.mc-preview-date, .mc-dialog-field span, .mc-dialog-field small, .mc-dialog-draft-title, .ml-result-line, .ml-size, .ml-used,
+.ml-path, .ml-path summary, .ml-card-note, .ml-empty p, .ml-provider summary,
+.ml-type-tabs button, .ml-transfer-progress span, .ml-copy span, .ml-copy p, .ml-incomplete span,
+.preview-art span, .preview-body .placeholder, .preview-media-icon svg, .more-dots {
+  color: var(--studio-muted);
+}
+.mc-unscheduled-toggle strong, .mc-summary strong, .ml-incomplete strong, .ml-copy strong { color: var(--studio-text); }
+.mc-other-month .mc-day-number { color: var(--studio-faint); opacity: 1; }
+.text-link, .button.link, .desk-today-line a, .desk-project-links button:not(.button),
+.desk-project-details .text-link, .publish-result-url, .publish-fallbacks a, .publish-account-info a,
+.account-source-details .text-link, .composer-empty-accounts a, .connection-card .text-link,
+.planning-question-source a, .planning-media a, .inline-link, .mc-text-button, .mc-clear,
+.ml-card-actions .ml-use span {
+  color: var(--studio-accent);
+}
+.text-link:hover, .button.link:hover, .connection-card .text-link:hover, .mc-text-button:hover:not(:disabled) { color: var(--studio-accent-hover); }
+.form-message, .ml-error, .ml-usage-error, .ml-card-error, .mc-form-error, .media-error { color: var(--studio-red); }
+
+/* ---------- Buttons: pills ---------- */
+.app-shell button:not(.mc-card-open):not(.publish-pick):not(.mc-unscheduled-toggle):not(.listbox-button),
+.app-shell .button, .mc-dialog button, .analysis-dialog button { border-radius: 999px !important; }
+.button, .planning-button, .ml-page .button,
+.mc-button:where(:not(.mc-icon-button, .mc-day-add, .mc-card-action, .mc-card-copy, .mc-more, .mc-text-button, .mc-clear, .mc-week-add, .mc-list-add, .mc-review-action)), .mc-workspace .mc-button:where(:not(.mc-icon-button, .mc-day-add, .mc-card-action, .mc-card-copy, .mc-more, .mc-text-button, .mc-clear, .mc-week-add, .mc-list-add, .mc-review-action)), .mc-dialog .mc-button:where(:not(.mc-icon-button, .mc-day-add, .mc-card-action, .mc-card-copy, .mc-more, .mc-text-button, .mc-clear, .mc-week-add, .mc-list-add, .mc-review-action)) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 7px 16px;
+  color: var(--studio-text);
+  background: var(--studio-overlay);
+  border: 1px solid var(--studio-line);
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-decoration: none;
+  transition: transform .12s ease;
+}
+.button.subtle, .button.dark, .composer-handoff .button, .ml-empty .button,
+.ml-page .button, .header-actions .button, .account-row-actions .button, .account-row-actions .native-account-open,
+.publish-target-actions .button, .ml-card-actions .button, .ml-provider .button {
+  color: var(--studio-text);
+  background: var(--studio-overlay);
+  border-color: var(--studio-line);
+  font-size: 13px;
+  font-weight: 500;
+}
+.button:hover:not(:disabled), .planning-button:hover:not(:disabled), .mc-button:hover:not(:disabled),
+.ml-page .button:hover:not(:disabled), .composer-handoff .button:hover:not(:disabled) {
+  color: var(--studio-text);
+  background: var(--studio-hover);
+  border-color: var(--studio-line-strong);
+  text-decoration: none;
+}
+.button:active:not(:disabled), .planning-button:active:not(:disabled), .mc-button:active:not(:disabled) { transform: scale(.96); }
+.button.small, .planning-card-bottom .planning-button, .ml-card-actions .button,
+.composer-media-reorder .button, .account-group-actions .button.small, .desk-project-links .button.small {
+  min-height: 30px;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+.button.primary, .button.lime, .planning-button.primary, .mc-button.mc-primary, .ml-page .button.primary,
+.ml-upload-button {
+  color: var(--studio-accent-ink);
+  background: var(--studio-accent);
+  border-color: var(--studio-accent);
+  box-shadow: none;
+  font-weight: 600;
+}
+.button.primary:hover:not(:disabled), .button.lime:hover:not(:disabled),
+.planning-button.primary:hover:not(:disabled), .mc-button.mc-primary:hover:not(:disabled),
+.ml-page .button.primary:hover:not(:disabled) {
+  color: var(--studio-accent-ink);
+  background: var(--studio-accent-hover);
+  border-color: var(--studio-accent-hover);
+}
+.button.danger, .ml-page .button.danger { color: var(--studio-red); }
+.button.danger:hover:not(:disabled), .ml-page .button.danger:hover:not(:disabled) {
+  color: var(--studio-red);
+  background: var(--studio-red-bg);
+  border-color: transparent;
+}
+.button.link { min-height: 28px; padding: 4px 9px; background: transparent; border-color: transparent; color: var(--studio-accent); }
+.button.link:hover:not(:disabled) { background: var(--studio-accent-bg); border-color: transparent; color: var(--studio-accent); }
+.button:disabled, .planning-button:disabled, .mc-button:disabled { opacity: .48; cursor: not-allowed; }
+/* Small inline actions inside calendar cards and lists keep their size; only the shape follows. */
+.mc-icon-button:not(.mc-day-add):not(.mc-card-copy) {
+  width: 36px; height: 36px; min-height: 36px; padding: 0;
+  color: var(--studio-muted); background: var(--studio-overlay); border: 1px solid var(--studio-line);
+}
+.mc-date-buttons .mc-icon-button, .mc-dialog-header .mc-icon-button { background: transparent; border-color: transparent; }
+.mc-icon-button:hover:not(:disabled) { color: var(--studio-text); background: var(--studio-hover); }
+.mc-day-add, .mc-card-action, .mc-card-copy, .mc-more, .mc-week-add, .mc-list-add, .mc-clear, .mc-text-button {
+  color: var(--studio-muted);
+  background: transparent;
+}
+.mc-day-add:hover:not(:disabled), .mc-card-action:hover:not(:disabled), .mc-card-copy:hover:not(:disabled),
+.mc-more:hover:not(:disabled), .mc-week-add:hover:not(:disabled), .mc-list-add:hover:not(:disabled),
+.mc-clear:hover:not(:disabled) { color: var(--studio-text); background: var(--studio-hover); }
+.mc-clear, .mc-text-button { color: var(--studio-accent); }
+/* 28px targets like the rest of the tool pages (calendar.css draws these at 23–24px). */
+.mc-workspace .mc-day-add, .mc-workspace .mc-card-copy { flex-shrink: 0; width: 28px; height: 28px; min-height: 28px; padding: 6px; }
+.mc-review-action { color: var(--studio-muted); background: var(--studio-subtle); }
+.mc-review-action:hover:not(:disabled) { color: var(--studio-text); background: var(--studio-hover); }
+.planning-group-review { border-radius: 999px; color: var(--studio-accent); }
+.planning-group-review:hover { background: var(--studio-hover); }
+.desk-edit-link, .desk-project-links button:not(.button) { border-radius: 999px; }
+.desk-edit-link:hover, .desk-project-links button:not(.button):hover:not(:disabled) { color: var(--studio-text); background: var(--studio-hover); }
+
+/* ---------- Tabs and segmented controls: one selected look ---------- */
+.dataset-switch, .import-tabs, .planning-group-tabs, .ml-view-switch, .mc-view-switch {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  color: var(--studio-muted);
+  background: var(--studio-subtle);
+  border: 1px solid var(--studio-line);
+  border-radius: 999px;
+}
+.import-tabs { display: flex; }
+.dataset-switch button, .import-tabs button, .planning-group-tabs button, .ml-view-switch button,
+.mc-view-switch .mc-button, .filter-tabs button, .desk-project-types button, .composer-version-tabs button,
+.planning-tabs button, .ml-type-tabs button, .preview-tabs button, .composer-layout .preview-tabs button {
+  min-height: 32px;
+  color: var(--studio-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 500;
+}
+.dataset-switch button, .import-tabs button, .planning-group-tabs button, .mc-view-switch .mc-button,
+.filter-tabs button, .desk-project-types button { padding: 6px 13px; }
+.dataset-switch button:hover:not(.active):not(:disabled), .import-tabs button:hover:not(.active),
+.planning-group-tabs button:hover:not(.active), .ml-view-switch button:hover:not(.is-active),
+.mc-view-switch .mc-button:hover:not(.mc-selected):not(:disabled), .filter-tabs button:hover:not(.active),
+.desk-project-types button:hover:not(.active), .composer-version-tabs button:hover:not(.active),
+.planning-tabs button:hover:not(.active), .ml-type-tabs button:hover:not(.is-active),
+.preview-tabs button:hover:not(.active) {
+  color: var(--studio-text);
+  background: var(--studio-hover);
+}
+.dataset-switch button.active, .import-tabs button.active, .planning-group-tabs button.active,
+.ml-view-switch button.is-active, .mc-view-switch .mc-selected, .mc-view-switch .mc-selected:hover:not(:disabled),
+.filter-tabs button.active, .desk-project-types button.active, .composer-version-tabs button.active,
+.planning-tabs button.active, .ml-type-tabs button.is-active, .preview-tabs button.active,
+.composer-layout .preview-tabs button.active {
+  color: var(--studio-accent-ink);
+  background: var(--studio-accent);
+  border-color: var(--studio-accent);
+  box-shadow: none;
+  font-weight: 600;
+}
+.filter-tabs button span, .desk-project-types button span {
+  color: inherit;
+  background: transparent;
+  border-color: currentColor;
+}
+.planning-tabs button span, .ml-type-tabs button span { color: var(--studio-muted); background: var(--studio-hover); border-radius: 999px; }
+:is(.planning-tabs, .ml-type-tabs) button:is(.active, .is-active) span {
+  color: inherit;
+  background: color-mix(in srgb, currentColor 20%, transparent);
+}
+/* Underlined tab bars become rows of pills. */
+.composer-version-tabs, .planning-tabs, .ml-type-tabs { gap: 6px; border-bottom: 0; }
+.composer-version-tabs button, .planning-tabs button, .ml-type-tabs button {
+  min-height: 32px;
+  padding: 6px 14px;
+  border-bottom-width: 1px;
+  margin: 0;
+}
+.composer-version-tabs { margin-bottom: 16px; padding-bottom: 2px; }
+.planning-tabs { margin-bottom: 20px; flex-wrap: wrap; }
+.ml-type-tabs { padding: 2px 0; }
+.composer-version-tabs i { background: currentColor; }
+.desk-project-types { border-bottom: 0; gap: 6px; }
+.preview-tabs button, .composer-layout .preview-tabs button { padding: 4px; min-height: 32px; min-width: 32px; }
+
+/* ---------- Fields ---------- */
+.app-shell :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]), select, textarea),
+.mc-dialog :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
+.analysis-dialog :is(input, select, textarea),
+.composer-panel #draft-title, .composer-panel #draft-body, #csv-text {
+  color: var(--studio-text);
+  background-color: var(--studio-subtle);
+  border: 1px solid var(--studio-field-border);
+  border-radius: var(--studio-field-radius);
+  caret-color: var(--studio-accent);
+  box-shadow: none;
+}
+.field input, .field textarea, .field select, .select-control, .planning-field input,
+.planning-field textarea, .planning-field select, .mc-search input, .mc-select select,
+.mc-dialog-field input, .void-form input, .media-provider input, #media-provider-form input {
+  font-size: 13px;
+}
+/* One-line fields are 40px, like the SPT window (and like .listbox-field next to them). */
+.field input:not([type="checkbox"]):not([type="radio"]), .planning-field input:not([type="checkbox"]):not([type="radio"]),
+.mc-dialog-field input:not([type="checkbox"]):not([type="radio"]), .void-form input, .media-provider input, #media-provider-form input {
+  min-height: 40px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  line-height: 1.5;
+}
+.app-shell :is(input, textarea)::placeholder, .mc-dialog input::placeholder { color: var(--studio-faint); opacity: 1; }
+.app-shell input[type="checkbox"], .app-shell input[type="radio"], .mc-dialog input[type="checkbox"] { accent-color: var(--studio-accent); }
+.app-shell :is(input, textarea, select):focus, .mc-dialog :is(input, select, textarea):focus {
+  border-color: var(--studio-accent);
+}
+.app-shell :is(input, textarea, select):focus-visible, .mc-dialog :is(input, select, textarea):focus-visible,
+.composer-panel #draft-title:focus-visible, .composer-panel #draft-body:focus-visible {
+  outline: 3px solid var(--studio-accent);
+  outline-offset: 3px;
+}
+/* Fields that sit inside a styled box keep the box. */
+.ml-search { color: var(--studio-faint); background: var(--studio-subtle); border: 1px solid var(--studio-field-border); border-radius: 999px; }
+.ml-search input { border-radius: 0 !important; }
+.mc-search input { border-radius: 999px; }
+.planning-account { padding: 0; border: 0; background: transparent; }
+
+/* ---------- Listbox: the SPT window's select (/workspace/listbox.js); there are no native selects ---------- */
+.listbox { position: relative; display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
+.listbox .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.listbox-label:not(.sr-only) { color: var(--studio-muted); font-size: 12px; }
+.listbox .listbox-button {
+  display: inline-flex; align-items: center; justify-content: space-between; gap: 8px;
+  min-width: 0; max-width: 100%; min-height: 36px; margin: 0; padding: 0 12px 0 14px;
+  color: var(--studio-text); background: var(--studio-overlay);
+  border: 1px solid var(--studio-line-strong); border-radius: 999px; box-shadow: none;
+  font: inherit; font-size: 13px; font-weight: 500; line-height: 1.3; text-align: left; cursor: pointer;
+}
+.listbox .listbox-button:hover:not(:disabled) { background: var(--studio-hover); }
+.listbox .listbox-button[aria-expanded="true"] { border-color: var(--studio-accent); }
+.listbox .listbox-button:disabled { opacity: .5; cursor: not-allowed; }
+.listbox-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.listbox .icon {
+  display: inline-block; flex: 0 0 14px; width: 14px; height: 14px; background: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat;
+}
+.listbox .i-caret-down { --icon: url("/workspace/icons/caret-down.svg"); color: var(--studio-muted); transition: transform .18s ease; }
+.listbox .i-check { --icon: url("/workspace/icons/check.svg"); }
+.listbox.open .i-caret-down { transform: rotate(180deg); }
+.listbox-list {
+  position: absolute; z-index: 60; top: calc(100% + 6px); left: 0;
+  min-width: max(100%, 180px); max-width: min(320px, calc(100vw - 32px)); max-height: 300px;
+  margin: 0; padding: 6px; overflow: auto; list-style: none;
+  background: var(--studio-overlay); border: 1px solid var(--studio-line-strong); border-radius: var(--studio-radius);
+  box-shadow: var(--studio-shadow); animation: studio-pop-in .18s ease;
+}
+.listbox.listbox-up .listbox-list { top: auto; bottom: calc(100% + 6px); }
+.listbox.listbox-end .listbox-list { left: auto; right: 0; }
+.listbox-list [role="option"] {
+  display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 10px;
+  color: var(--studio-text); border-radius: var(--studio-field-radius); font-size: 13px; cursor: pointer;
+}
+.listbox-list [role="option"].active { background: var(--studio-hover); }
+.listbox-list [role="option"][aria-selected="true"] { color: var(--studio-accent); font-weight: 600; }
+.listbox-list [role="option"][aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+.listbox-option-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.listbox-hint { color: var(--studio-muted); font-size: 12px; font-weight: 400; }
+.listbox-check { visibility: hidden; }
+[aria-selected="true"] > .listbox-check { visibility: visible; }
+@keyframes studio-pop-in { from { opacity: 0; transform: translateY(-4px); } }
+/* Full width (filters in a row, fields in a form), and borderless inside a box that already has a border. */
+.listbox-block, .listbox-field { display: flex; width: 100%; }
+.listbox-block .listbox-button, .listbox-field .listbox-button { width: 100%; }
+.listbox-field .listbox-button { min-height: 40px; background: var(--studio-subtle); border-color: var(--studio-field-border); border-radius: var(--studio-field-radius); }
+.listbox-quiet .listbox-button { padding-left: 8px; background: transparent; border-color: transparent; }
+.planning-account .listbox-quiet .listbox-button { margin-left: -8px; width: calc(100% + 8px); font-weight: 600; }
+.planning-batch-label { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.planning-batch-label > span { color: var(--studio-muted); font-size: 12px; white-space: nowrap; }
+.planning-batch-label .listbox { max-width: 330px; }
+@media (max-width: 700px) { .planning-batch-label { width: 100%; } .planning-account { flex: 1 1 100%; } }
+/* Calendar filters: two per row on a phone, so each one can show what it is set to. */
+@media (max-width: 640px) { .mc-select { flex: 1 1 calc(50% - 8px); min-width: 0; max-width: none; } }
+.app-shell input[type="date"]::-webkit-calendar-picker-indicator,
+.app-shell input[type="datetime-local"]::-webkit-calendar-picker-indicator { opacity: .8; }
+
+/* ---------- Panels and cards ---------- */
+.panel, .desk-stat, .desk-project, .desk-empty, .draft-card, .section-empty, .connection-card,
+.error-state, .composer-layout .preview-shell, .planning-panel, .planning-side-card, .planning-question-card,
+.planning-plan-intro, .planning-review-card, .planning-ai, .planning-progress, .planning-empty, .planning-group,
+.ml-library, .ml-upload-strip, .ml-empty, .mc-calendar-shell, .mc-unscheduled, .mc-empty,
+.composer-handoff:not(.composer-handoff-compact) {
+  color: var(--studio-text);
+  background: var(--studio-surface);
+  border: 1px solid var(--studio-line);
+  border-radius: var(--studio-panel-radius) !important;
+  box-shadow: none;
+}
+.mc-empty { border-width: 1px 0 0; border-radius: 0 !important; background: transparent; }
+.planning-group, .ml-upload-strip, .ml-empty, .planning-side-card.green {
+  background: var(--studio-subtle);
+}
+/* Cards and boxes inside panels. */
+.info-note, .account-option, .composer-channels .account-option, .preview-card, .composer-layout .preview-card,
+.upload-zone, .code-block, .desk-notice, .publish-pick, .publish-copy, .rednote-upload-controls,
+.mc-demo-note, .mc-card, .mc-unscheduled-empty, .mc-dialog-notice, .planning-batch-toolbar,
+.planning-plan-card, .planning-media, .planning-callout, .planning-review-table, .planning-next-review,
+.ml-incomplete, .ml-card, .ml-copy, .media-copy, .media-binding, .composer-media-section .media-binding,
+.composer-empty-accounts, .finding-evidence, .publish-old-metrics, .media-guide, .planning-review-card blockquote,
+.research-links a, .mc-preview-body, .ml-list .ml-file-art {
+  border-radius: var(--studio-radius) !important;
+}
+.composer-media-section .media-binding, .media-binding, .composer-empty-accounts, .composer-handoff, .info-note,
+.desk-notice, .rednote-upload-controls, .finding-evidence, .research-links a, .upload-zone,
+.planning-callout, .planning-empty, .planning-next-review, .mc-dialog-notice,
+.mc-demo-note, .planning-batch-toolbar, .publish-copy, .publish-old-metrics, .code-block, .media-copy,
+.mc-unscheduled-empty, .ml-copy, .mc-preview-body {
+  color: var(--studio-muted);
+  background: var(--studio-subtle);
+  border-color: var(--studio-line);
+}
+.publish-copy, .code-block, .mc-preview-body, .composer-layout .preview-body, .preview-body { color: var(--studio-text); }
+.composer-layout .preview-body, .preview-body { background: transparent; border-color: var(--studio-line); }
+.composer-handoff h3, .composer-handoff .spark-mark { color: var(--studio-text); }
+.composer-handoff.composer-handoff-compact { background: transparent; border: 0; }
+.upload-zone:hover, .research-links a:hover { background: var(--studio-hover); }
+.preview-card, .composer-layout .preview-card, .mc-card, .ml-card, .planning-plan-card,
+.planning-question-card, .account-option { background: var(--studio-surface); border: 1px solid var(--studio-line); }
+.mc-card:hover, .ml-card:hover { border-color: var(--studio-line-strong); box-shadow: none; }
+.planning-plan-card.selected { background: var(--studio-accent-bg); border-color: var(--studio-accent); }
+.desk-stat:hover { background: var(--studio-hover); border-color: var(--studio-line-strong); }
+.publish-pick { color: var(--studio-text); background: transparent; border: 1px solid transparent; }
+.publish-pick:hover { background: var(--studio-hover); }
+.publish-pick.active { background: var(--studio-accent-bg); border-color: var(--studio-line-strong); }
+.publish-more a, .publish-more > span { color: var(--studio-accent); background: var(--studio-subtle); border-color: var(--studio-line); }
+.desk-draft-row, .desk-project-details, .publish-list-top, .publish-metadata, .publish-checklist,
+.publish-assets .panel-heading, .publish-media-list li, .publish-account-info[open], .publish-receipt-form,
+.publish-history .panel-heading, .publish-receipt, .publish-metrics, .publish-session-panel .panel-heading,
+.publish-session-accounts article, .account-group .panel-heading, .account-row, .composer-media-row,
+.settings-platform, .composer-version-tabs, .form-actions, .draft-date, .form-section + .form-section,
+.media-row, .media-provider, .composer-panel .form-section, .research-links, .table-footer, .label,
+.planning-tabs, .ml-provider, .ml-library-top, .mc-card-actions, .mc-toolbar, .mc-filters,
+.mc-calendar-footer, .mc-range-empty, .mc-day, .mc-weekday, .mc-week-day, .mc-list-group header,
+.mc-dialog-header, .planning-group header, .ml-file-art {
+  border-color: var(--studio-line);
+}
+/* Selected checkbox choices (multi-select, not tabs): soft lilac. */
+.account-option:has(input:checked), .platform-option:has(input:checked),
+.composer-channels .account-option:has(input:checked), .composer-channels .platform-option:has(input:checked) {
+  color: var(--studio-text);
+  background: var(--studio-accent-bg);
+  border-color: var(--studio-accent);
+  box-shadow: none;
+}
+.account-option, .platform-option, .composer-channels .account-option, .composer-channels .platform-option {
+  color: var(--studio-muted);
+  background: var(--studio-subtle);
+  border: 1px solid var(--studio-line);
+}
+.platform-option, .composer-channels .platform-option { border-radius: 999px; padding: 5px 12px 5px 8px; min-height: 34px; font-size: 12px; font-weight: 600; }
+.account-option strong, .composer-channels .account-option strong { color: var(--studio-text); font-size: 13px; }
+.account-option small, .composer-channels .account-option small { color: var(--studio-muted); font-size: 12px; }
+.composer-channels .account-select { max-height: 196px; margin-bottom: 16px; }
+.composer-channels .platform-select { gap: 8px; }
+.composer-savebar, .dialog-heading, .analysis-dialog { color: var(--studio-text); background: var(--studio-surface); border-color: var(--studio-line); }
+.composer-savebar { box-shadow: 0 -1px 0 var(--studio-line); }
+.composer-layout .preview-art, .preview-art { color: var(--studio-muted); background: var(--studio-media); }
+.composer-layout .preview-art .preview-media-icon, .desk-project-symbol, .desk-row-icon, .publish-account-mark, .section-number, .media-glyph, .media-file-mark,
+.ml-upload-symbol, .planning-step, .ml-empty > span, .mc-empty > span, .mc-unscheduled-icon {
+  color: var(--studio-accent);
+  background: var(--studio-accent-bg);
+  border-color: var(--studio-line);
+}
+.desk-project-symbol.tone-1 { color: var(--studio-green); background: var(--studio-green-bg); }
+.desk-project-symbol.tone-2 { color: var(--studio-amber); background: var(--studio-amber-bg); }
+.desk-project-symbol.tone-3 { color: var(--studio-muted); background: var(--studio-hover); }
+
+/* ---------- Status ---------- */
+.status-pill, .planning-tag, .table-source-badge, .mc-count, .mc-preview-status,
+.ml-status, .session-chip, .account-session-label, .label, .rednote-upload-state, .mc-demo-note strong {
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+/* desk.css hides the login label below 1150px, which is every width the SPT window gives this page. */
+@media (min-width: 640px) and (max-width: 1150px) { .account-session-label { display: inline; } }
+.status-pill, .status-pill.imported, .status-pill.draft, .planning-tag, .planning-tag.light, .table-source-badge,
+.mc-count, .mc-preview-status, .mc-demo-note strong {
+  color: var(--studio-muted);
+  background: var(--studio-hover);
+  border-color: transparent;
+}
+.status-pill.review, .status-pill.demo, .planning-tag.amber, .desk-notice.warn, .publish-recheck,
+.info-note.warning, .media-incomplete-row, .dataset-banner, .ml-incomplete {
+  color: var(--studio-amber);
+  background: var(--studio-amber-bg);
+  border-color: transparent;
+}
+.status-pill.approved, .planning-tag.green {
+  color: var(--studio-green);
+  background: var(--studio-green-bg);
+  border-color: transparent;
+}
+.dataset-banner strong, .dataset-banner button, .publish-media-list em, .rednote-upload-state.state-failed,
+.rednote-upload-state.state-needs_attention, .rednote-upload-state.state-needs_login { color: var(--studio-amber); }
+.publish-recorded-note, .rednote-upload-state.state-awaiting_review, .ml-success { color: var(--studio-green); }
+.info-note.warning svg { color: currentColor; }
+.ml-status.is-error { color: var(--studio-red); background: var(--studio-red-bg); }
+.ml-status.is-active { color: var(--studio-accent); background: var(--studio-accent-bg); }
+.planning-mini-path span {
+  color: var(--studio-muted);
+  background: var(--studio-hover);
+  border-color: transparent;
+}
+.mc-summary-dot.mc-purple, .mc-legend-dot.mc-approved { background: var(--studio-accent); }
+.mc-summary-dot.mc-amber, .mc-legend-dot.mc-review { background: var(--studio-amber); }
+.mc-summary-dot.mc-gray, .mc-legend-dot.mc-draft { background: var(--studio-faint); }
+.mc-demo-note .mc-button { margin-left: auto; flex-shrink: 0; }
+.mc-empty .mc-text-button, .mc-range-empty .mc-text-button { margin-left: 4px; }
+
+/* ---------- Calendar, library, planning specifics ---------- */
+.ml-page { --ml-purple: var(--studio-accent); --ml-ink: var(--studio-text); --ml-muted: var(--studio-muted); --ml-line: var(--studio-line); color: var(--studio-text); }
+.mc-workspace { --mc-purple: var(--studio-accent); --mc-ink: var(--studio-text); --mc-muted: var(--studio-muted); --mc-border: var(--studio-line); color: var(--studio-text); }
+.mc-day, .mc-week-day { background: var(--studio-surface); }
+.mc-other-month, .mc-weekday, .mc-unscheduled-empty { background: var(--studio-subtle); }
+.mc-day.mc-today, .mc-week-day.mc-today { background: var(--studio-surface); }
+.mc-today .mc-day-number, .mc-day.mc-today .mc-day-number, .mc-week-day.mc-today .mc-day-number {
+  color: var(--studio-accent-ink);
+  background: var(--studio-accent);
+}
+.mc-weekday { color: var(--studio-muted); font-size: 12px; }
+.mc-dialog { color: var(--studio-text); background: var(--studio-surface); border: 1px solid var(--studio-line); border-radius: 24px; box-shadow: var(--studio-shadow); }
+.analysis-dialog { border-radius: 24px; box-shadow: var(--studio-shadow); }
+.analysis-dialog::backdrop, .mc-dialog::backdrop { background: var(--studio-backdrop); }
+.ml-file-art, .ml-card-video .ml-file-art { color: var(--studio-muted); background: var(--studio-media); }
+.ml-file-kind, .ml-file-extension { color: var(--studio-muted); }
+.ml-upload-symbol { color: var(--studio-accent); background: var(--studio-accent-bg); }
+.ml-library { padding: 6px 20px 20px; }
+.ml-empty > span { color: var(--studio-accent); background: var(--studio-accent-bg); }
+.ml-empty .button { color: var(--studio-text); }
+.planning-progress > div:last-child, .planning-question-card.parked { background: var(--studio-subtle); }
+.planning-progress strong { color: var(--studio-text); }
+.planning-review-card blockquote { color: var(--studio-text); background: var(--studio-subtle); }
+.media-guide { background: var(--studio-subtle) !important; }
+.media-small { color: var(--studio-muted) !important; }
+
+/* ---------- Tables, charts ---------- */
+.data-table th, .planning-review-table th { color: var(--studio-muted); background: var(--studio-subtle); border-color: var(--studio-line); }
+.data-table td, .planning-review-table td { color: var(--studio-muted); border-color: var(--studio-line); }
+/* Trend chart: the stretched SVG only draws lines; numbers, dates and dots are HTML, so they keep their size and shape. */
+
+
+
+progress, progress::-webkit-progress-bar { background: var(--studio-hover); }
+progress::-webkit-progress-value { background: var(--studio-accent); }
+
+/* ---------- Platform marks (brand colours, readable on both themes) ---------- */
+.platform-mark { background: color-mix(in srgb, var(--platform) 18%, var(--studio-surface)); color: color-mix(in srgb, var(--platform) 55%, var(--studio-text)); }
+.app-shell .platform-mark.tiktok, .app-shell .publish-account-mark.tiktok { font-size: 0; background: #29282f; }
+.app-shell .platform-mark.tiktok::before, .app-shell .publish-account-mark.tiktok::before {
+  content: ""; display: block; width: 70%; height: 70%; background: #fff;
+  -webkit-mask: url("/workspace/icons/platform-tiktok.svg") center / contain no-repeat;
+  mask: url("/workspace/icons/platform-tiktok.svg") center / contain no-repeat;
+}
+.app-shell .platform-mark.xiaohongshu, .app-shell .publish-account-mark.xiaohongshu { font-size: 0; letter-spacing: 0; background: #db2546; }
+.app-shell .platform-mark.xiaohongshu::before, .app-shell .publish-account-mark.xiaohongshu::before {
+  content: ""; display: block; width: 72%; height: 72%; background: #fff;
+  -webkit-mask: url("/workspace/icons/platform-xiaohongshu.svg") center / contain no-repeat;
+  mask: url("/workspace/icons/platform-xiaohongshu.svg") center / contain no-repeat;
+}
+
+/* ---------- Toasts: ✕ to close, errors stay until closed, the timer waits on hover/focus (like the SPT window) ---------- */
+.toast-region { pointer-events: none; }
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 6px 6px 6px 14px;
+  color: var(--studio-text);
+  background: var(--studio-overlay);
+  border: 1px solid var(--studio-line-strong);
+  border-radius: var(--studio-radius);
+  box-shadow: var(--studio-shadow);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.toast-text { flex: 1; min-width: 0; margin: 0; padding: 5px 0; overflow-wrap: anywhere; }
+.toast-action, .toast-close {
+  flex: none; display: inline-flex; align-items: center; justify-content: center; min-height: 32px; margin: 0;
+  background: transparent; border: 0; border-radius: 999px; font: inherit; cursor: pointer;
+}
+.toast-action { padding: 0 12px; color: var(--studio-accent); font-weight: 600; }
+.toast-action:hover { background: var(--studio-accent-bg); }
+.toast-close { width: 32px; padding: 0; color: var(--studio-muted); }
+.toast-close:hover { color: var(--studio-text); background: var(--studio-hover); }
+.toast-close svg { width: 14px; height: 14px; }
+.toast.error { color: var(--studio-red); background: var(--studio-red-bg); border-color: transparent; }
+.toast.error .toast-close { color: var(--studio-red); }
+.toast.error .toast-close:hover { color: var(--studio-red); background: color-mix(in srgb, var(--studio-red) 16%, transparent); }
+html.embedded .toast-region { left: auto; right: 16px; bottom: 16px; align-items: flex-end; max-width: calc(100vw - 32px); }
+@media (max-width: 600px) {
+  html.embedded .toast-region { left: 16px; right: 16px; align-items: stretch; }
+  html.embedded .toast { max-width: none; }
+}
+
+/* ---------- Text links and disclosure rows: at least 28px to hit, same place in the layout ---------- */
+.text-link, .publish-fallbacks a, .planning-source a, .composer-empty-accounts a, .publish-account-info a { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; min-height: 28px; }
+.publish-checklist label { min-height: 28px; align-items: center; }
+.publish-metadata > summary, .publish-more > summary, .publish-account-info > summary, .publish-receipt-form > summary { padding-block: 5px; cursor: pointer; }
+.media-binding > .text-link { justify-self: start; }
+.publish-help > summary, .account-source-details > summary, .account-form-notes > summary { padding-block: 4px; cursor: pointer; }
+.ml-provider > summary { min-height: 28px; align-items: center; }
+.publish-metrics > summary { min-height: 28px; }
+.publish-more > summary { min-width: 28px; text-align: center; }
+.publish-void > summary { padding-block: 5px; }
+.ml-path > summary, .publish-result-url { padding-block: 3px; }
+
+/* ---------- 编辑内容 ---------- */
+/* 继续编辑: the latest drafts above a blank form (read-only links that open the draft). */
+.recent-drafts { margin: 0 0 16px; padding: 14px 16px 16px; }
+.recent-drafts-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; margin-bottom: 8px; }
+.recent-drafts-head h2 { margin: 0; color: var(--studio-text); font-size: 14px; font-weight: 600; }
+.recent-draft-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.recent-draft {
+  display: flex; flex-direction: column; justify-content: center; gap: 6px; min-height: 64px; padding: 10px 12px;
+  color: var(--studio-text); background: var(--studio-subtle); border: 1px solid var(--studio-line);
+  border-radius: var(--studio-radius); text-decoration: none; transition: transform .12s ease;
+}
+.recent-draft:hover { background: var(--studio-hover); border-color: var(--studio-line-strong); }
+.recent-draft:active { transform: scale(.98); }
+.recent-draft-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
+.recent-draft-meta { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--studio-muted); font-size: 12px; }
+.recent-draft-meta .status-pill { flex: none; padding: 1px 8px; }
+.recent-draft-meta time { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 600px) { .recent-draft-list li:nth-child(n+4) { display: none; } }
+/* 「只写平台草稿」: platforms without accounts, folded under the account list. */
+.platform-only { margin-top: 2px; }
+.platform-only > summary {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 28px; padding: 0 8px 0 2px;
+  color: var(--studio-accent); font-size: 13px; font-weight: 500; list-style: none; cursor: pointer; border-radius: 999px;
+}
+.platform-only > summary::-webkit-details-marker { display: none; }
+.platform-only > summary::before {
+  content: ""; width: 6px; height: 6px; margin: 0 2px 0 4px;
+  border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform .15s ease;
+}
+.platform-only[open] > summary::before { transform: rotate(45deg); }
+.platform-only > summary:hover { color: var(--studio-accent-hover); background: var(--studio-hover); }
+.composer-channels .platform-only .platform-select { margin-bottom: 4px; }
+.composer-saved > span { min-width: 0; }
+/* The save bar says when this draft was saved — only for a saved draft (empty, and hidden, for a new one). */
+.composer-savebar { flex-wrap: wrap; row-gap: 8px; }
+.composer-savebar .composer-saved { display: flex; margin-right: auto; }
+.composer-savebar .composer-saved:empty { display: none; }
+/* 复制文案 sits at the end of the row under the text. */
+.composer-editor-tools { justify-content: flex-end; }
+/* 计划时间: icon and words together, the time zone at the end. */
+.composer-schedule .field-label { justify-content: flex-start; gap: 6px; }
+.composer-schedule .field-label small { margin-left: auto; }
+/* AI 辅助: a quiet pill that opens the copy-the-brief panel. */
+.composer-ai { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.ai-toggle {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 32px; margin: 0; padding: 5px 12px 5px 10px;
+  color: var(--studio-text); background: transparent; border: 1px solid var(--studio-line-strong); border-radius: 999px;
+  font: inherit; font-size: 13px; font-weight: 500; line-height: 1.3; cursor: pointer; transition: transform .12s ease;
+}
+.ai-toggle:hover { background: var(--studio-hover); }
+.ai-toggle:active { transform: scale(.96); }
+.ai-toggle svg { width: 16px; height: 16px; color: var(--studio-accent); }
+.ai-toggle svg:last-child { width: 14px; height: 14px; color: var(--studio-muted); transition: transform .18s ease; }
+.ai-toggle[aria-expanded="true"] svg:last-child { transform: rotate(180deg); }
+.composer-ai-panel {
+  width: 100%; padding: 14px 16px; color: var(--studio-muted); background: var(--studio-subtle);
+  border: 1px solid var(--studio-line); border-radius: var(--studio-radius); animation: studio-pop-in .18s ease;
+}
+
+/* ---------- 数据导入: the import and one row per imported file (charts and rankings are on the SPT window's 数据 page) ---------- */
+/* The grid gap spaces the two panels (side by side or stacked), not the panel + panel margin. */
+.data-layout > .panel + .panel { margin-top: 0; }
+.data-sources { --source-pad: 21px; }
+.source-table { table-layout: fixed; }
+.source-table th:first-child, .source-table td:first-child { padding-left: var(--source-pad); }
+.source-table th:last-child, .source-table td:last-child { padding-right: var(--source-pad); }
+.source-table .source-when { width: 112px; }
+.source-table .num { width: 88px; }
+.source-table td { vertical-align: baseline; }
+.source-table td:first-child { white-space: normal; }
+.source-table .table-title { max-width: none; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.source-table .table-sub { margin-top: 3px; overflow-wrap: anywhere; }
+.data-sources .source-empty {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;
+  padding: 0 var(--source-pad) 20px;
+}
+.data-sources .source-empty p { margin: 0; font-size: 13px; line-height: 1.6; }
+@media (max-width: 760px) { .data-sources { --source-pad: 18px; } }
+@media (max-width: 600px) { .source-table .source-when { width: 100px; } .source-table .num { width: 76px; } }
+html[data-density="compact"] .data-sources { --source-pad: 16px; }
+
+/* ---------- 发布日历 ··· menu: rarely used page actions (导出) ---------- */
+.mc-overflow { position: relative; display: inline-flex; }
+.mc-overflow-button[aria-expanded="true"] { color: var(--studio-text); background: var(--studio-hover); }
+.mc-overflow-menu {
+  position: absolute; z-index: 40; top: calc(100% + 6px); right: 0; min-width: 236px; max-width: calc(100vw - 32px); padding: 6px;
+  background: var(--studio-overlay); border: 1px solid var(--studio-line-strong); border-radius: var(--studio-radius);
+  box-shadow: var(--studio-shadow); animation: studio-pop-in .18s ease;
+}
+.mc-overflow-menu.mc-overflow-start { right: auto; left: 0; }
+.mc-overflow-item {
+  display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 8px 10px;
+  color: var(--studio-text); border-radius: var(--studio-field-radius); font-size: 13px; text-decoration: none;
+}
+.mc-overflow-item:hover, .mc-overflow-item:focus { background: var(--studio-hover); }
+.mc-overflow-item svg { width: 18px; height: 18px; color: var(--studio-accent); }
+
+/* ---------- Narrow standalone window ---------- */
+@media (max-width: 760px) {
+  .sidebar { background: var(--studio-subtle); border-top-color: var(--studio-line); }
+}
+
+/* ---------- Inside the SPT window: the window already has the sidebar and the title bar ---------- */
+html.embedded .sidebar, html.embedded .main-footer, html.embedded .topbar, html.embedded .topbar .profile-avatar,
+html.embedded .topbar .local-status, html.embedded .topbar .icon-button[href="#connections"] { display: none !important; }
+html.embedded .app-shell { display: block !important; min-height: 100vh; background: transparent; }
+html.embedded body { background: transparent; }
+html.embedded .main-shell { width: 100%; min-width: 0; }
+html.embedded main, html.embedded main#content { max-width: none !important; margin: 0 !important; padding: 0 0 24px !important; }
+
+/* ---------- 密度：紧凑（跟随 SPT 设置） ---------- */
+html[data-density="compact"] body { font-size: 13px; }
+html[data-density="compact"] :is(.button, .planning-button),
+html[data-density="compact"] .mc-button:where(:not(.mc-icon-button, .mc-day-add, .mc-card-action, .mc-card-copy, .mc-more, .mc-text-button, .mc-clear, .mc-week-add, .mc-list-add, .mc-review-action)), html[data-density="compact"] .mc-workspace .mc-button:where(:not(.mc-icon-button, .mc-day-add, .mc-card-action, .mc-card-copy, .mc-more, .mc-text-button, .mc-clear, .mc-week-add, .mc-list-add, .mc-review-action)), html[data-density="compact"] .ml-page .button {
+  min-height: 30px;
+  padding: 5px 12px;
+}
+html[data-density="compact"] .button.small { min-height: 28px; padding: 3px 10px; }
+html[data-density="compact"] .mc-icon-button:not(.mc-day-add):not(.mc-card-copy) { width: 30px; height: 30px; min-height: 30px; }
+html[data-density="compact"] :is(.page-header, .compact-header, .mc-intro, .planning-header) { margin-bottom: 14px; }
+html[data-density="compact"] .panel-heading { padding: 14px 16px; }
+html[data-density="compact"] .form-panel { padding: 18px; }
+html[data-density="compact"] .composer-panel .form-section { padding: 16px 18px; }
+html[data-density="compact"] :is(.desk-project, .publish-target, .publish-summary, .settings-row) { padding: 14px 16px; }
+html[data-density="compact"] .account-row { padding: 14px 16px; }
+html[data-density="compact"] :is(.planning-side-card, .planning-question-card, .planning-review-card) { padding: 16px; }
+html[data-density="compact"] .planning-progress > div { padding: 14px 16px; }
+html[data-density="compact"] .ml-upload-strip { padding: 16px 18px; }
+html[data-density="compact"] .ml-card-main { padding: 12px; }
+html[data-density="compact"] .mc-toolbar { padding: 12px 16px 10px; }
+html[data-density="compact"] .mc-filters { padding: 0 16px 12px; }
+html[data-density="compact"] .mc-day { min-height: 104px; }
+html[data-density="compact"] :is(.studio-layout, .data-layout, .composer-layout) { gap: 14px; }
+html[data-density="compact"] .field input, html[data-density="compact"] .field textarea,
+html[data-density="compact"] .field select, html[data-density="compact"] .planning-field :is(input, textarea, select) { padding: 8px 11px; }
+html[data-density="compact"] .field input:not([type="checkbox"]):not([type="radio"]),
+html[data-density="compact"] .planning-field input:not([type="checkbox"]):not([type="radio"]) { min-height: 36px; padding-top: 6px; padding-bottom: 6px; }
+html[data-density="compact"] .listbox .listbox-button { min-height: 32px; }
+html[data-density="compact"] .listbox-field .listbox-button { min-height: 36px; }
+
+/* ---------- 动效 ---------- */
+html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-motion="reduced"] *::after { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+/* Inside the SPT window its own tabs lead back; standalone pages keep the link. */
+html.embedded .standalone-only { display: none !important; }

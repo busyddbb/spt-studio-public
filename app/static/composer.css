@@ -1,0 +1,82 @@
+.composer-layout{grid-template-columns:minmax(0,1fr) 310px;gap:24px;align-items:start}
+.composer-panel{overflow:visible;padding:0}
+.composer-panel .form-section{padding:22px 24px;border-bottom:1px solid var(--studio-line)}
+.composer-section-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
+.composer-section-head h2{font-size:14px;font-weight:650}
+.composer-optional{font-size:12px;font-weight:400;color:var(--studio-faint);margin-left:8px}
+.composer-channels .account-select{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px;max-height:156px;overflow-y:auto}
+.composer-channels .account-option{min-width:0;background:var(--studio-subtle);border:1px solid var(--studio-line);border-radius:9px;padding:10px;gap:8px}
+.composer-channels .account-option:has(input:checked){background:var(--studio-subtle);border-color:var(--studio-accent)}
+.composer-channels .account-option input{accent-color:var(--studio-accent);width:14px;height:14px;flex-shrink:0}
+.composer-channels .account-option>span:last-child{min-width:0}
+.composer-channels .account-option strong,.composer-channels .account-option small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.composer-channels .account-option strong{font-size:12px;color:var(--studio-text)}
+.composer-channels .account-option small{font-size:12px;margin-top:3px;color:var(--studio-muted)}
+.composer-channels .platform-select{gap:7px;display:flex;flex-wrap:wrap}
+.composer-channels .platform-option{padding:7px 9px;border-radius:8px;gap:6px;display:flex;align-items:center;font-size:12px;background:var(--studio-surface)}
+.composer-channels .platform-option input{accent-color:var(--studio-accent);width:12px;height:12px}
+.composer-channels .platform-mark{width:22px;height:22px}
+.composer-channels .platform-option:has(input:checked){border-color:var(--studio-accent);background:var(--studio-surface);color:var(--studio-accent)}
+.composer-empty-accounts{display:flex;align-items:center;gap:9px;font-size:12px;background:var(--studio-subtle);border:1px dashed var(--studio-line);border-radius:9px;padding:13px;margin-bottom:15px;flex-wrap:wrap;color:var(--studio-muted)}
+.composer-empty-accounts a{color:var(--studio-accent);margin-left:auto;font-weight:550}
+.composer-panel .field-label{font-size:12px;color:var(--studio-muted);gap:6px;line-height:1.6}
+.composer-panel .field-label small{font-size:12px;color:var(--studio-faint);font-weight:400}
+.composer-panel .field-help{font-size:12px;line-height:1.8;margin-top:9px;color:var(--studio-faint)}
+.composer-panel #draft-title{height:43px;background:var(--studio-surface);border:1px solid var(--studio-line);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--studio-text)}
+.composer-writing>.field{margin-bottom:22px}
+.composer-version-tabs{display:flex;gap:4px;border-bottom:1px solid var(--studio-line);margin:0 0 18px;overflow-x:auto}
+.composer-version-tabs button{flex-shrink:0;display:flex;align-items:center;gap:6px;background:transparent;padding:11px 10px 12px;border-bottom:2px solid transparent;border-radius:0;color:var(--studio-muted);font-size:12px;font-weight:500}
+.composer-version-tabs button.active{color:var(--studio-accent);border-bottom-color:var(--studio-accent)}
+.composer-version-tabs .platform-mark{width:18px;height:18px;border-radius:5px;font-size:10px}
+.composer-version-tabs .platform-mark svg{width:13px;height:13px}
+.composer-version-tabs i{width:4px;height:4px;border-radius:50%;background:var(--studio-accent)}
+.composer-panel #draft-body{min-height:240px;border:1px solid var(--studio-line);background:var(--studio-surface);border-radius:9px;padding:16px;font-size:14px;line-height:1.9;display:block;width:100%;color:var(--studio-text)}
+.composer-panel #draft-body::placeholder,.composer-panel #draft-title::placeholder{color:var(--studio-faint)}
+.composer-panel .composer-body-field{margin:0}
+.composer-editor-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;color:var(--studio-faint);font-size:12px}
+.composer-editor-tools .button{font-size:12px;flex-shrink:0}
+.composer-media-section .media-binding{background:var(--studio-subtle);border:1px dashed var(--studio-line);border-radius:9px;padding:12px;font-size:12px;line-height:1.8}
+.composer-media-section .media-binding>p{color:var(--studio-faint)}
+.composer-schedule{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.composer-schedule .field-label{width:100%;display:flex;align-items:center}
+.composer-schedule .field-label svg{width:16px;height:16px;color:var(--studio-faint)}
+.composer-schedule input{height:40px;border:1px solid var(--studio-line);border-radius:8px;background:var(--studio-surface);padding:8px 10px;color:var(--studio-muted);font-size:12px;max-width:100%}
+.composer-schedule .field-help{margin:0}
+.composer-savebar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 24px;background:var(--studio-surface);border-radius:0 0 14px 14px;position:sticky;bottom:0;z-index:3;box-shadow:0 -4px 18px #33224a03}
+.composer-savebar .form-actions{padding:0;border:0;margin:0;display:flex;gap:8px}
+.composer-local{font-size:12px;color:var(--studio-faint);display:flex;align-items:center;gap:5px}
+.composer-local svg{width:14px;height:14px;color:var(--studio-faint)}
+.composer-panel #draft-message{padding:0 24px 12px;margin:0;empty-cells:hide}
+.composer-panel #draft-message:empty{padding:0}
+.composer-layout .studio-preview{position:sticky;top:20px}
+.composer-layout .preview-shell{background:var(--studio-surface);border-color:var(--studio-line)}
+.composer-layout .preview-label{padding:19px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.composer-layout .preview-label h2{font-size:13px;color:var(--studio-muted)}
+.composer-layout .preview-tabs{display:flex;gap:6px;padding:0 17px 15px;margin:0;border:0;flex-wrap:wrap}
+.composer-layout .preview-tabs button{border:1px solid var(--studio-line);border-radius:7px;background:var(--studio-surface);padding:6px;line-height:1}
+.composer-layout .preview-tabs button.active{border-color:var(--studio-accent);box-shadow:0 0 0 2px #eee7ff}
+.composer-layout .preview-tabs .platform-mark{width:22px;height:22px}
+.composer-layout .preview-card{margin:0 17px 16px;border:1px solid var(--studio-line);background:var(--studio-surface);border-radius:10px;overflow:hidden;box-shadow:0 5px 18px #36225305}
+.composer-layout .preview-account{padding:14px 12px;gap:8px}
+.composer-layout .preview-account strong{font-size:12px;color:var(--studio-muted);white-space:normal}
+.composer-layout .preview-account small{font-size:12px;color:var(--studio-faint);margin-top:3px}
+.composer-layout .preview-art{height:235px;background:var(--studio-subtle);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;color:var(--studio-faint);padding:15px;text-align:center}
+.composer-layout .preview-art .preview-media-icon{position:static;width:50px;height:50px;border:1px solid var(--studio-line);border-radius:15px;display:grid;place-items:center;background:#ffffff55;padding:0}
+.preview-media-icon svg{width:25px;height:25px;color:var(--studio-faint)}
+.composer-layout .preview-art strong{font-size:13px;font-weight:550;color:var(--studio-muted)}
+.composer-layout .preview-art>span:last-child{position:static;font-size:12px;color:var(--studio-faint);background:transparent;padding:0;transform:none}
+.composer-layout .preview-social{padding:14px 13px 0;display:flex;gap:12px;color:var(--studio-muted)}
+.composer-layout .preview-social svg{width:16px;height:16px}
+.composer-layout .preview-body{font-size:12px;line-height:1.9;padding:13px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto;color:var(--studio-muted)}
+.composer-layout .preview-body strong{display:block;margin-bottom:6px;color:var(--studio-muted);font-weight:600}
+.composer-layout .preview-footnote{font-size:12px;line-height:1.8;padding:0 17px 18px;color:var(--studio-faint)}
+.composer-handoff{margin-top:17px;padding:20px;border:1px solid var(--studio-line);background:var(--studio-accent-bg);border-radius:12px}
+.composer-handoff .spark-mark{font-size:20px;color:var(--studio-accent);margin:0 0 10px}
+.composer-handoff h3{font-size:14px;color:var(--studio-muted);font-weight:550}
+.composer-handoff p{font-size:12px;line-height:1.9;color:var(--studio-faint);margin:8px 0 15px}
+.composer-handoff .button{background:var(--studio-surface);color:var(--studio-muted);border-color:var(--studio-line);font-size:12px}
+.composer-handoff small{display:block;font-size:12px;color:var(--studio-faint);margin-top:11px}
+@media(min-width:1500px){.composer-layout{grid-template-columns:minmax(0,1fr) 350px}.composer-layout .preview-art{height:280px}}
+@media(max-width:1100px){.composer-layout{grid-template-columns:minmax(0,1fr) 270px;gap:16px}.composer-panel .form-section{padding:18px}.composer-channels .account-select{grid-template-columns:1fr}.composer-savebar{padding:16px}.composer-local{display:none}.composer-layout .preview-art{height:210px}}
+@media(max-width:850px){.composer-layout{grid-template-columns:1fr}.composer-layout .studio-preview{position:static;max-width:460px;width:100%;margin:auto}.composer-channels .account-select{grid-template-columns:repeat(2,minmax(0,1fr))}.composer-savebar{justify-content:flex-end}.composer-optional{display:none}}
+@media(max-width:520px){.composer-channels .account-select{grid-template-columns:1fr}.composer-editor-tools{align-items:flex-start}.composer-section-head{gap:10px}.composer-panel .form-section{padding:16px}}

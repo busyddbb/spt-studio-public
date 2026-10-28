@@ -1,0 +1,16 @@
+# SPT 只读收录的外部目录：不移动、不复制、不改写。放在 工作区/SPT.yaml 才生效。
+# 路径中含 账号 / accounts / .git / .env / node_modules 的一律不读。
+# 把下面的 # 去掉、改成你自己的路径即可。
+
+# skills:
+#   - 名称: 我的方法库
+#     路径: ~/Documents/方法库/skills
+#     提示词: true
+
+# prompts:
+#   - 名称: 运营
+#     路径: ~/Documents/方法库/运营提示词
+
+# records:
+#   - 名称: 周报
+#     路径: ~/Documents/周报

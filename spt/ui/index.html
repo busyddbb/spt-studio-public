@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#1b1829">
+  <title>运营 · SPT</title>
+  <script src="boot.js?v=studio-20261023-36"></script>
+  <link rel="icon" type="image/svg+xml" href="brand/spt-symbol-small.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="brand/favicon-32.png">
+  <link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
+  <link rel="stylesheet" href="spt.css?v=studio-20261024-40">
+  <script src="listbox.js?v=studio-20261023-36" defer></script>
+  <script src="dashboard.js?v=studio-20261024-4" defer></script>
+  <script src="analytics.js?v=studio-20261023-36" defer></script>
+  <script src="library.js?v=studio-20261023-36" defer></script>
+  <script src="notes.js?v=studio-20261023-36" defer></script>
+  <script src="publish-queue.js?v=studio-20261024-2" defer></script>
+  <script src="spt.js?v=studio-20261024-2" defer></script>
+</head>
+<body data-api-base="/api" data-legacy-base="">
+  <a class="skip-link" href="#view">跳到内容</a>
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="工作区导航">
+      <a class="brand" href="#desk" aria-label="SPT Studio 首页"><svg class="ghost-mark" viewBox="40 24 176 208" aria-hidden="true"><path class="ghost-body" d="M48 112A80 80 0 0 1 208 112V160H152Q144 160 144 168V224H72A24 24 0 0 1 48 200Z"/><path class="ghost-flap" d="M152 176Q152 168 160 168H208L152 224Z"/><path class="ghost-eye" d="M89 124a13 17 0 1 0 26 0a13 17 0 1 0 -26 0ZM141 124a13 17 0 1 0 26 0a13 17 0 1 0 -26 0Z"/><path class="ghost-cheek" d="M69 150a11 11 0 1 0 22 0a11 11 0 1 0 -22 0ZM165 148a11 11 0 1 0 22 0a11 11 0 1 0 -22 0Z"/></svg><span class="brand-words" aria-hidden="true"><svg class="brand-spt" viewBox="230 60 224 154" aria-hidden="true"><path d="M295 114.24C290 105.92 281.25 104 270 104C255 104 245 112 245 120C245 131.2 256.25 134.72 270 136.0C283.75 137.28 295 140.8 295 152C295 160 285 168 270 168C258.75 168 250 166.08 245 157.76 M318 104V200 M350 104A32.0 32.0 0 0 1 350 168A32.0 32.0 0 0 1 350 104 M412 74V150Q412 168 430 168H438 M396 104H436" fill="none" stroke="currentColor" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/></svg><small>STUDIO</small></span></a>
+      <nav class="primary-nav" aria-label="主导航">
+        <a href="#desk" data-route="desk" aria-label="运营"><span class="icon i-squares-four" aria-hidden="true"></span><span>运营</span></a>
+        <a href="#works" data-route="works" aria-label="资产库"><span class="icon i-folder-open" aria-hidden="true"></span><span>资产库</span></a>
+        <a href="#notes" data-route="notes" aria-label="便签"><span class="icon i-note" aria-hidden="true"></span><span>便签</span></a>
+        <a href="#analytics" data-route="analytics" aria-label="数据"><span class="icon i-chart-line" aria-hidden="true"></span><span>数据</span></a>
+        <a href="#intelligence" data-route="intelligence" aria-label="情报"><span class="icon i-file-text" aria-hidden="true"></span><span>情报</span></a>
+        <a href="#publish" data-route="publish" aria-label="发布"><span class="icon i-arrow-square-out" aria-hidden="true"></span><span>发布</span></a>
+        <a href="#settings" data-route="settings" aria-label="设置" class="settings-link"><span class="icon i-gear-six" aria-hidden="true"></span><span>设置</span></a>
+      </nav>
+    </aside>
+    <div class="workspace-content">
+      <header class="topbar">
+        <button class="toolbar-search" type="button" data-action="global-search" aria-haspopup="dialog" aria-keyshortcuts="Meta+K" title="跳转页面、搜索资产、新建便签 ⌘ K"><span class="icon i-magnifying-glass" aria-hidden="true"></span><span>搜索资产</span></button>
+        <button class="button toolbar-refresh" type="button" data-action="refresh" aria-label="刷新：重新读取工作区和运营资料" title="重新读取工作区里的文件和运营资料"><span class="icon i-arrow-clockwise" aria-hidden="true"></span><span>刷新</span></button>
+      </header>
+      <div class="offline-banner" id="offline-banner" role="status" hidden><span class="icon i-warning-circle" aria-hidden="true"></span><p>连不上 SPT 本机服务。</p><button type="button" class="button small" data-action="retry-connect">重试</button></div>
+      <div class="body-layout">
+        <main id="view" tabindex="-1"><header class="page-heading"><div><h1 tabindex="-1">运营</h1></div></header><div class="dashboard-skeleton" aria-busy="true" aria-label="正在读取"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div></main>
+        <section id="tool-host" class="tool-host" aria-label="发布工具" hidden></section>
+      </div>
+      <footer class="app-footer"><span id="connection-text">连接中</span><span id="source-path" hidden>SPT / 工作区</span><span id="sync-time"></span></footer>
+    </div>
+  </div>
+  <template id="library-template">
+    <section class="library" aria-labelledby="library-title">
+      <header class="page-heading library-heading"><h1 id="library-title" tabindex="-1">资产库</h1><div id="kind-slot"></div><div class="page-controls"><div id="export-slot"></div></div></header>
+      <div class="library-toolbar">
+        <div class="search"><span class="icon i-magnifying-glass" aria-hidden="true"></span><label class="sr-only" for="search">搜索资产库</label><input id="search" type="search" placeholder="搜索资产库" autocomplete="off"></div>
+        <p class="library-status"><span class="result-count" id="result-count" role="status">读取中</span></p>
+        <div class="toolbar-controls"><span data-listbox-slot="status-filter"></span><span data-listbox-slot="cover-ratio"></span><div class="view-switch" role="group" aria-label="网格或列表"><button type="button" id="grid-view" class="icon-button selected" title="网格视图" aria-label="网格视图" aria-pressed="true"><span class="icon i-squares-four" aria-hidden="true"></span></button><button type="button" id="list-view" class="icon-button" title="列表视图" aria-label="列表视图" aria-pressed="false"><span class="icon i-list-bullets" aria-hidden="true"></span></button></div></div>
+      </div>
+      <nav class="category-nav" id="category-nav" aria-label="分组"></nav>
+      <div class="inline-message" id="library-message" role="status" hidden></div>
+      <div id="work-results" aria-busy="true"></div>
+    </section>
+  </template>
+  <dialog id="detail-dialog" class="detail-dialog" aria-labelledby="detail-title"><div id="detail-content"></div></dialog>
+  <dialog id="note-dialog" class="note-dialog" aria-labelledby="note-dialog-title"><div id="note-dialog-content"></div></dialog>
+  <dialog id="post-dialog" class="post-dialog" aria-labelledby="post-dialog-title"><div id="post-dialog-content"></div></dialog>
+  <dialog id="palette" class="palette" aria-label="命令面板">
+    <div class="palette-field"><span class="icon i-magnifying-glass" aria-hidden="true"></span><input id="palette-input" type="text" role="combobox" aria-label="跳转页面、搜索资产、新建便签" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list" placeholder="跳转页面、搜索资产、新建便签" autocomplete="off" spellcheck="false"></div>
+    <ul id="palette-list" class="palette-list" role="listbox" aria-label="结果"></ul>
+    <p class="palette-empty" hidden></p>
+  </dialog>
+  <div class="toast-region" id="notice" aria-live="polite"></div>
+</body>
+</html>
