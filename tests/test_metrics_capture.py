@@ -6,7 +6,7 @@ import unittest
 from spt.server import metrics_capture as capture
 
 OBSERVED = dt.datetime(2026, 10, 24, 16, 0, tzinfo=dt.timezone.utc)
-LA = dt.timezone(dt.timedelta(hours=-7))
+LOCAL = capture.LOCAL_ZONE  # platform list times use the computer's local zone
 
 
 def work(identifier: str, title: str, ids: set[str], published: dt.datetime | None,
@@ -38,14 +38,14 @@ class MatchTests(unittest.TestCase):
         self.assertEqual(capture.match(row, works, "tiktok", OBSERVED)["id"], "a")
 
     def test_meta_row_matches_the_one_work_published_at_that_moment(self) -> None:
-        works = [work("a", "北京鸭 窗光暗调", set(), dt.datetime(2026, 10, 23, 23, 52, tzinfo=LA)),
-                 work("b", "三道菜剪辑V4", set(), dt.datetime(2026, 10, 21, 19, 51, tzinfo=LA))]
+        works = [work("a", "北京鸭 窗光暗调", set(), dt.datetime(2026, 10, 23, 23, 52, tzinfo=LOCAL)),
+                 work("b", "三道菜剪辑V4", set(), dt.datetime(2026, 10, 21, 19, 51, tzinfo=LOCAL))]
         row = {"note_id": "1000000000000000001", "title": "Bring your duck craving to Sample Studio.",
                "time": "Fri Oct 23, 11:52pm"}
         self.assertEqual(capture.match(row, works, "facebook", OBSERVED)["id"], "a")
 
     def test_two_works_at_the_same_moment_match_nothing(self) -> None:
-        at = dt.datetime(2026, 10, 23, 23, 52, tzinfo=LA)
+        at = dt.datetime(2026, 10, 23, 23, 52, tzinfo=LOCAL)
         works = [work("a", "一", set(), at), work("b", "二", set(), at)]
         row = {"title": "Something", "time": "Fri Oct 23, 11:53pm"}
         self.assertIsNone(capture.match(row, works, "facebook", OBSERVED))
@@ -58,7 +58,7 @@ class MatchTests(unittest.TestCase):
 
     def test_rednote_still_matches_by_note_id_and_title(self) -> None:
         works = [work("a", "印树叶，他挑了有洞的那片", {"000000000000000000000066"},
-                      dt.datetime(2026, 10, 23, 19, 49, tzinfo=LA))]
+                      dt.datetime(2026, 10, 23, 19, 49, tzinfo=LOCAL))]
         self.assertEqual(capture.match({"note_id": "000000000000000000000066"}, works)["id"], "a")
         self.assertEqual(capture.match({"title": "印树叶，他挑了有洞的那片", "time": "2026-10-24 10:49"}, works)["id"], "a")
 
@@ -119,17 +119,17 @@ class FakeStore:
 class NodeTests(unittest.TestCase):
     def test_a_post_reaching_d1_since_the_last_read_is_due(self) -> None:
         store = FakeStore([("北京鸭 窗光暗调", "instagram", "2026-10-23T23:53-07:00")])
-        d1 = dt.datetime(2026, 10, 24, 23, 53, tzinfo=LA)
+        d1 = dt.datetime(2026, 10, 24, 23, 53, tzinfo=LOCAL)
         self.assertEqual(capture.node_passed(store, "2026-10-24T20:00:00+00:00", d1), "北京鸭 窗光暗调 D1")
         self.assertIsNone(capture.node_passed(store, "2026-10-24T20:00:00+00:00",
                                               d1 - dt.timedelta(minutes=1)))
 
     def test_a_node_already_covered_by_the_last_read_is_not_due_again(self) -> None:
         store = FakeStore([("北京鸭 窗光暗调", "facebook", "2026-10-23T23:52-07:00")])
-        later = dt.datetime(2026, 10, 25, 12, 0, tzinfo=LA)
+        later = dt.datetime(2026, 10, 25, 12, 0, tzinfo=LOCAL)
         self.assertIsNone(capture.node_passed(store, "2026-10-25T08:00:00+00:00", later))
         self.assertEqual(capture.node_passed(store, None, later), "北京鸭 窗光暗调 D1")
 
     def test_platforms_the_app_cannot_read_do_not_trigger(self) -> None:
         store = FakeStore([("北京鸭 窗光暗调", "google_business", "2026-10-23T23:52-07:00")])
-        self.assertIsNone(capture.node_passed(store, None, dt.datetime(2026, 10, 30, tzinfo=LA)))
+        self.assertIsNone(capture.node_passed(store, None, dt.datetime(2026, 10, 30, tzinfo=LOCAL)))
