@@ -1,3 +1,4 @@
+from contextlib import closing
 import os
 import json
 import tempfile
@@ -296,7 +297,7 @@ class WorkPublishingTests(unittest.TestCase):
         work_publishing.claim({"executor_id": "screen"})
         proof = {"identity_verified": True, "account_profile_id": self.accounts[0]["handle"], "duplicate_checked": True, "upload_complete": True, "media_count": 1, "media_order": ["01.jpg"], "title": "标题原样", "body": "正文第一行\n正文第二行\n", "topics": ["爸爸带娃", "带娃日常"], "topics_complete": True, "settings": {"allow_body_copy": False, "scheduled": False, "visibility": "public"}, "settings_verified": True, "png_base64": base64.b64encode(b"\x89PNG\r\n\x1a\n").decode()}
         work_publishing.event({"id": job["id"], "event": "preflight", "executor_id": "screen", "evidence": proof})
-        with sqlite3.connect(self.db) as db:
+        with closing(sqlite3.connect(self.db)) as db, db:
             raw = db.execute("SELECT payload FROM publishing_queue WHERE id=?", (job["id"],)).fetchone()[0]
         self.assertNotIn("png_base64", raw)
         self.assertTrue(json.loads(raw)["evidence"]["screenshot_path"].endswith("-evidence.png"))

@@ -58,7 +58,7 @@ class MediaDraftBindingTests(unittest.TestCase):
         legacy = dict(draft)
         legacy.pop("media_ids")
         legacy["status"] = "review"
-        with core.connect() as connection:
+        with core.connection() as connection:
             connection.execute(
                 "UPDATE drafts SET payload=? WHERE id=?",
                 (json.dumps(legacy), draft["id"]),
@@ -149,7 +149,7 @@ class MediaDraftBindingTests(unittest.TestCase):
     def test_export_rejects_unresolved_asset_reference_instead_of_incomplete_package(self):
         draft = self.make_draft()
         draft["media_ids"] = ["deleted-or-missing-asset"]
-        with core.connect() as connection:
+        with core.connection() as connection:
             connection.execute(
                 "UPDATE drafts SET payload=? WHERE id=?",
                 (json.dumps(draft), draft["id"]),

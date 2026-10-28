@@ -39,3 +39,12 @@ jobs:
         run: python scripts/run_frontend_checks.py
       - name: Fresh installation startup
         run: python scripts/smoke_test.py
+      - name: Verify Windows installer and bundled video tool
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          call 安装Windows.bat <NUL
+          if errorlevel 1 exit /b 1
+          .venv\Scripts\python.exe -c "import yaml, PIL, playwright"
+          if errorlevel 1 exit /b 1
+          .venv\Scripts\ffmpeg.exe -version

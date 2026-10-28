@@ -128,7 +128,7 @@ class HTTPTests(unittest.TestCase):
         root = self.paths["火光"]
         write(self.root / "private.txt", "private")
         (root / "outside.txt").symlink_to(self.root / "private.txt")
-        for path in ("../private.txt", "/etc/passwd", "outside.txt"):
+        for path in ("../private.txt", str((self.root / "private.txt").resolve()), "outside.txt"):
             self.assertEqual(self.request(self.file_url(path))[0], 403)
         self.assertEqual(self.request("/../server/config.py")[0], 403)
         self.assertEqual(self.request("/api/missing")[0], 404)

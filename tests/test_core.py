@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import csv
 import io
+import sqlite3
 from pathlib import Path
 import sys
 import tempfile
@@ -67,7 +68,7 @@ class IsolatedCoreTest(unittest.TestCase):
         return core.import_csv("ads", csv_text("ads", rows), filename)
 
     def row_counts(self):
-        with core.connect() as connection:
+        with core.connection() as connection:
             return {
                 name: connection.execute(f"SELECT COUNT(*) FROM {name}").fetchone()[0]
                 for name in ("observations", "imports", "audit", "drafts", "accounts")
@@ -88,6 +89,43 @@ class IsolatedCoreTest(unittest.TestCase):
 
     def saved_draft(self, identifier):
         return next(d for d in core.state("real")["drafts"] if d["id"] == identifier)
+
+
+class ConnectionLifetimeTests(IsolatedCoreTest):
+    def test_transaction_commits_then_releases_the_database(self):
+        with core.connection() as connection:
+            connection.execute("INSERT INTO audit VALUES (?,?,?,?)",
+                               ("saved", "2026-10-27T00:00:00Z", "test", "{}"))
+        with self.assertRaises(sqlite3.ProgrammingError):
+            connection.execute("SELECT 1")
+        with core.connection() as reopened:
+            self.assertEqual(reopened.execute("SELECT id FROM audit").fetchone()[0],
+                             "saved")
+
+    def test_failed_transaction_rolls_back_and_releases_the_database(self):
+        with self.assertRaisesRegex(ValueError, "cancelled"):
+            with core.connection() as connection:
+                connection.execute("INSERT INTO audit VALUES (?,?,?,?)",
+                                   ("discarded", "2026-10-27T00:00:00Z", "test", "{}"))
+                raise ValueError("cancelled")
+        with self.assertRaises(sqlite3.ProgrammingError):
+            connection.execute("SELECT 1")
+        with core.connection() as reopened:
+            self.assertEqual(reopened.execute("SELECT COUNT(*) FROM audit").fetchone()[0], 0)
+
+    def test_initialization_failure_also_releases_the_database(self):
+        class BrokenPragma(sqlite3.Connection):
+            def execute(self, sql, *arguments):
+                if sql.startswith("PRAGMA journal_mode"):
+                    raise sqlite3.OperationalError("cannot initialize")
+                return super().execute(sql, *arguments)
+
+        connection = sqlite3.connect(":memory:", factory=BrokenPragma)
+        with patch.object(core.sqlite3, "connect", return_value=connection):
+            with self.assertRaisesRegex(sqlite3.OperationalError, "cannot initialize"):
+                core.connect()
+        with self.assertRaises(sqlite3.ProgrammingError):
+            connection.execute("SELECT 1")
 
 
 class SnapshotImportTests(IsolatedCoreTest):

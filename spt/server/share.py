@@ -85,6 +85,11 @@ def write_zip(folder: Path, zip_path: Path) -> None:
                 archive.write(path, name + "/")
             else:
                 archive.write(path, name)
+                if path.suffix in {".command", ".sh"} or path.parent == folder / "spt/bin" \
+                        or ".app/Contents/MacOS/" in name:
+                    info = archive.getinfo(name)
+                    info.create_system = 3
+                    info.external_attr = (stat.S_IFREG | 0o755) << 16
 
 
 def personal_paths(target: Path) -> list[str]:

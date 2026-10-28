@@ -71,6 +71,15 @@ def pillow() -> bool:
     return importlib.util.find_spec("PIL") is not None
 
 
+def bundled_ffmpeg() -> str | None:
+    try:
+        import imageio_ffmpeg
+        binary = imageio_ffmpeg.get_ffmpeg_exe()
+        return binary if Path(binary).is_file() else None
+    except (ImportError, OSError, RuntimeError):
+        return None
+
+
 def build(source: Path, target: Path, owner: Any, cache: Path) -> None:
     """Make target from source with the tools this computer has; problems go to owner.issues.
 
@@ -78,7 +87,7 @@ def build(source: Path, target: Path, owner: Any, cache: Path) -> None:
     before giving up. sips and Quick Look are only looked for on a Mac.
     """
     mac = on_mac()
-    binary = shutil.which("ffmpeg")
+    binary = shutil.which("ffmpeg") or bundled_ffmpeg()
     sips = mac and bool(shutil.which("sips"))
     quick = sips and bool(shutil.which("qlmanage"))
     video = source.suffix.lower() in VIDEOS

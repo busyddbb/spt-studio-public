@@ -1,5 +1,6 @@
 """Human publishing and self-contained recovery, using isolated work data."""
 from __future__ import annotations
+from contextlib import closing
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
@@ -166,7 +167,7 @@ class OperationsTests(unittest.TestCase):
         voided = operations.void_receipt({'id': receipt['id'], 'reason': '误选作品链接'})['receipt']
         self.assertTrue(voided['voided'])
         self.assertEqual(core.state()['summary']['post_count'], 0)
-        with sqlite3.connect(self.db) as connection:
+        with closing(sqlite3.connect(self.db)) as connection, connection:
             self.assertEqual(connection.execute('SELECT COUNT(*) FROM ops_metrics').fetchone()[0], 2)
         with self.assertRaises(core.ValidationError):
             operations.record_metrics({'receipt_id': receipt['id'], 'observed_at': '2026-10-03T11:00:00Z', 'views': 1})
@@ -249,7 +250,7 @@ class OperationsTests(unittest.TestCase):
                 'data/imports/original.csv', 'data/imports/receipt.json', '备份说明.md'})
             target = self.root / 'restored.sqlite3'
             target.write_bytes(archive.read('data/media.sqlite3'))
-            with sqlite3.connect(target) as connection:
+            with closing(sqlite3.connect(target)) as connection, connection:
                 self.assertEqual(connection.execute('PRAGMA integrity_check').fetchone()[0], 'ok')
                 self.assertEqual(connection.execute('SELECT id FROM ops_receipts').fetchone()[0], receipt['id'])
                 self.assertEqual(connection.execute('SELECT COUNT(*) FROM drafts').fetchone()[0], 1)

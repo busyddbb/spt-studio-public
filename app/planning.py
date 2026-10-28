@@ -5,7 +5,7 @@ All publication observations are manually entered and keep their history.
 """
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from datetime import datetime, timezone
 import json
 import math
@@ -50,32 +50,28 @@ def _dump(value):
 def _connect():
     path = Path(core.DB)
     path.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(path, timeout=10)
-    connection.row_factory = sqlite3.Row
-    connection.execute('PRAGMA journal_mode=WAL')
-    connection.executescript('''
-      CREATE TABLE IF NOT EXISTS planning_strategies (
-        account_id TEXT PRIMARY KEY, payload TEXT NOT NULL);
-      CREATE TABLE IF NOT EXISTS planning_questions (
-        id TEXT PRIMARY KEY, account_id TEXT NOT NULL, payload TEXT NOT NULL);
-      CREATE INDEX IF NOT EXISTS planning_question_account ON planning_questions(account_id);
-      CREATE TABLE IF NOT EXISTS planning_batches (
-        id TEXT PRIMARY KEY, account_id TEXT NOT NULL, payload TEXT NOT NULL);
-      CREATE INDEX IF NOT EXISTS planning_batch_account ON planning_batches(account_id);
-      CREATE TABLE IF NOT EXISTS planning_items (
-        id TEXT PRIMARY KEY, account_id TEXT NOT NULL, batch_id TEXT NOT NULL, payload TEXT NOT NULL);
-      CREATE INDEX IF NOT EXISTS planning_item_batch ON planning_items(account_id, batch_id);
-      CREATE TABLE IF NOT EXISTS planning_observations (
-        id TEXT PRIMARY KEY, account_id TEXT NOT NULL, item_id TEXT NOT NULL,
-        batch_id TEXT NOT NULL, payload TEXT NOT NULL);
-      CREATE INDEX IF NOT EXISTS planning_observation_item ON planning_observations(account_id, item_id);
-    ''')
-    try:
+    with closing(sqlite3.connect(path, timeout=10)) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute('PRAGMA journal_mode=WAL')
+        connection.executescript('''
+          CREATE TABLE IF NOT EXISTS planning_strategies (
+            account_id TEXT PRIMARY KEY, payload TEXT NOT NULL);
+          CREATE TABLE IF NOT EXISTS planning_questions (
+            id TEXT PRIMARY KEY, account_id TEXT NOT NULL, payload TEXT NOT NULL);
+          CREATE INDEX IF NOT EXISTS planning_question_account ON planning_questions(account_id);
+          CREATE TABLE IF NOT EXISTS planning_batches (
+            id TEXT PRIMARY KEY, account_id TEXT NOT NULL, payload TEXT NOT NULL);
+          CREATE INDEX IF NOT EXISTS planning_batch_account ON planning_batches(account_id);
+          CREATE TABLE IF NOT EXISTS planning_items (
+            id TEXT PRIMARY KEY, account_id TEXT NOT NULL, batch_id TEXT NOT NULL, payload TEXT NOT NULL);
+          CREATE INDEX IF NOT EXISTS planning_item_batch ON planning_items(account_id, batch_id);
+          CREATE TABLE IF NOT EXISTS planning_observations (
+            id TEXT PRIMARY KEY, account_id TEXT NOT NULL, item_id TEXT NOT NULL,
+            batch_id TEXT NOT NULL, payload TEXT NOT NULL);
+          CREATE INDEX IF NOT EXISTS planning_observation_item ON planning_observations(account_id, item_id);
+        ''')
         with connection:
             yield connection
-    finally:
-        connection.close()
-
 
 def _text(value, field, *, required=False, limit=4000):
     if value is None and not required:

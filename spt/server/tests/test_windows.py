@@ -170,6 +170,7 @@ class CoverToolTests(unittest.TestCase):
         calls = []
         record = lambda name: (lambda *args: calls.append(name))   # noqa: E731
         with patch.object(covers, "on_mac", return_value=False), \
+                patch.object(covers, "bundled_ffmpeg", return_value=None), \
                 patch.object(covers, "pillow", return_value=pillow), \
                 patch.object(covers.shutil, "which", which or (lambda name: None)), \
                 patch.object(covers, "generate", side_effect=record("ffmpeg")), \

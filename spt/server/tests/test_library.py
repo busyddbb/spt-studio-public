@@ -6,6 +6,7 @@ import http.client
 import io
 import json
 import sqlite3
+from contextlib import closing
 import tempfile
 import threading
 import unittest
@@ -374,20 +375,20 @@ class MigrationTests(unittest.TestCase):
             config = fixture_config(Path(folder))
             populate(config.workspace)
             config.cache.mkdir(parents=True)
-            with sqlite3.connect(config.database) as connection:
+            with closing(sqlite3.connect(config.database)) as connection, connection:
                 connection.execute("CREATE TABLE works (id TEXT PRIMARY KEY, "
                                    "title TEXT)")
             indexer = Indexer(config)
             indexer.reindex()
             self.assertEqual(len(indexer.store.list_works()), 4)
-            with sqlite3.connect(config.database) as connection:
+            with closing(sqlite3.connect(config.database)) as connection, connection:
                 version = connection.execute("PRAGMA user_version").fetchone()
                 columns = {row[1] for row in connection.execute(
                     "PRAGMA table_info(works)")}
             self.assertEqual(version[0], 4)
             self.assertIn("note", columns)
             self.assertIn("cover_rule", columns)
-            with sqlite3.connect(config.database) as connection:
+            with closing(sqlite3.connect(config.database)) as connection, connection:
                 tables = {row[0] for row in connection.execute(
                     "SELECT name FROM sqlite_master WHERE type='table'")}
             self.assertIn("metric_observations", tables)
@@ -569,7 +570,7 @@ class WorkspaceSettingTests(unittest.TestCase):
     def test_custom_workspace_is_checked_saved_and_switched(self):
         from unittest import mock
         from spt.server import config as settings
-        with tempfile.TemporaryDirectory() as folder:
+        with tempfile.TemporaryDirectory(prefix="spt-workspace-test-", dir=Path.cwd()) as folder:
             base = fixture_config(Path(folder))
             populate(base.workspace)
             other = Path(folder) / "另一个工作区"

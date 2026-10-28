@@ -4,6 +4,7 @@ Every test points core.DB at a temporary database; the workbench's real data
 directory is never read or changed.
 """
 from __future__ import annotations
+from contextlib import closing
 
 import copy
 import csv
@@ -304,7 +305,7 @@ class LegacyMetricsTests(unittest.TestCase):
                                    "views": 40})
         self.assertEqual(len(self.merged()["posts"]), 2)
         operations.void_receipt({"id": receipt["id"], "reason": "链接选错"})
-        with sqlite3.connect(self.db) as connection:
+        with closing(sqlite3.connect(self.db)) as connection, connection:
             kept = connection.execute("SELECT COUNT(*) FROM ops_metrics")
             self.assertEqual(kept.fetchone()[0], 1, "history stays in ops_metrics")
         self.assertEqual([post["id"] for post in self.merged()["posts"]],
@@ -339,7 +340,7 @@ class LegacyMetricsTests(unittest.TestCase):
         self.assertEqual(empty, before)
         self.assertNotIn("ads", empty)
         other = self.root / "accounts-only.sqlite3"
-        with sqlite3.connect(other) as connection:
+        with closing(sqlite3.connect(other)) as connection, connection:
             connection.execute("CREATE TABLE accounts (id,platform,handle,payload)")
         with patch.object(core, "DB", other):
             partial = fixture()
@@ -349,7 +350,7 @@ class LegacyMetricsTests(unittest.TestCase):
     def test_reading_never_writes_the_database(self) -> None:
         self.import_social(social_row(post_id="fresh", url=""))
         self.import_ads(ads_row())
-        with sqlite3.connect(self.db) as connection:
+        with closing(sqlite3.connect(self.db)) as connection, connection:
             connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
         before = self.db.read_bytes()
         snapshot = self.merged()
@@ -359,7 +360,7 @@ class LegacyMetricsTests(unittest.TestCase):
 
     def test_a_wal_database_without_its_side_files_is_still_read(self) -> None:
         self.import_social(social_row(post_id="wal", url=""))
-        with sqlite3.connect(self.db) as connection:
+        with closing(sqlite3.connect(self.db)) as connection, connection:
             connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
         for suffix in ("-wal", "-shm"):
             side = self.db.with_name(self.db.name + suffix)

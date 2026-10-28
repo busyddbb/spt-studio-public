@@ -5,7 +5,7 @@ person entered; it is never a platform confirmation or a scheduled publication.
 """
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -39,25 +39,20 @@ def _json(value):
 
 @contextmanager
 def _connect():
-    connection = core.connect()
-    connection.executescript('''
-      CREATE TABLE IF NOT EXISTS ops_projects (id TEXT PRIMARY KEY, payload TEXT NOT NULL);
-      CREATE TABLE IF NOT EXISTS ops_bindings (draft_id TEXT PRIMARY KEY, payload TEXT NOT NULL);
-      CREATE TABLE IF NOT EXISTS ops_receipts (
-        id TEXT PRIMARY KEY, draft_id TEXT NOT NULL, account_id TEXT NOT NULL,
-        url TEXT NOT NULL, voided INTEGER NOT NULL DEFAULT 0, payload TEXT NOT NULL);
-      CREATE UNIQUE INDEX IF NOT EXISTS ops_receipt_active
-        ON ops_receipts(draft_id, account_id, url) WHERE voided=0;
-      CREATE TABLE IF NOT EXISTS ops_metrics (
-        id TEXT PRIMARY KEY, receipt_id TEXT NOT NULL, observed_at TEXT NOT NULL,
-        payload TEXT NOT NULL, UNIQUE(receipt_id, observed_at));
-    ''')
-    try:
-        with connection:
-            yield connection
-    finally:
-        connection.close()
-
+    with core.connection() as connection:
+        connection.executescript('''
+          CREATE TABLE IF NOT EXISTS ops_projects (id TEXT PRIMARY KEY, payload TEXT NOT NULL);
+          CREATE TABLE IF NOT EXISTS ops_bindings (draft_id TEXT PRIMARY KEY, payload TEXT NOT NULL);
+          CREATE TABLE IF NOT EXISTS ops_receipts (
+            id TEXT PRIMARY KEY, draft_id TEXT NOT NULL, account_id TEXT NOT NULL,
+            url TEXT NOT NULL, voided INTEGER NOT NULL DEFAULT 0, payload TEXT NOT NULL);
+          CREATE UNIQUE INDEX IF NOT EXISTS ops_receipt_active
+            ON ops_receipts(draft_id, account_id, url) WHERE voided=0;
+          CREATE TABLE IF NOT EXISTS ops_metrics (
+            id TEXT PRIMARY KEY, receipt_id TEXT NOT NULL, observed_at TEXT NOT NULL,
+            payload TEXT NOT NULL, UNIQUE(receipt_id, observed_at));
+        ''')
+        yield connection
 
 def _text(value, field, required=False, limit=4000):
     if value is None and not required:
@@ -501,7 +496,7 @@ def backup():
         with tempfile.TemporaryDirectory(prefix='media-backup-db-') as directory:
             db_copy = Path(directory) / 'media.sqlite3'
             with _connect() as source:
-                with sqlite3.connect(db_copy) as target:
+                with closing(sqlite3.connect(db_copy)) as target, target:
                     source.backup(target)
                 project_config = _projects(source)
             candidates = []

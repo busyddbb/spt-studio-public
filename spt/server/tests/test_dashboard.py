@@ -4,6 +4,7 @@ import csv
 import io
 import json
 import sqlite3
+from contextlib import closing
 import tempfile
 import unittest
 from pathlib import Path
@@ -188,7 +189,7 @@ class DashboardTests(unittest.TestCase):
         self.csv("content_performance.csv", [self.post_row()])
         path = self.root / "spt/server/.cache/index.sqlite3"
         path.parent.mkdir(parents=True)
-        with sqlite3.connect(path) as connection:
+        with closing(sqlite3.connect(path)) as connection, connection:
             connection.executescript(SCHEMA)
             connection.execute("INSERT INTO works "
                                "(id,title,media_match,cover_source) "
@@ -209,3 +210,19 @@ class DashboardTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FreshInstallationTests(unittest.TestCase):
+    def test_missing_optional_local_configs_start_empty_without_errors(self):
+        from unittest.mock import patch
+        from spt.server import dashboard_intelligence
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            with patch.object(dashboard_intelligence, '__file__', str(root/'spt/server/dashboard_intelligence.py')):
+                result = dashboard_snapshot(root)
+            self.assertEqual(result['accounts'], [])
+            self.assertEqual(result['posts'], [])
+            self.assertEqual(result['intelligence']['news'], [])
+            self.assertEqual(result['intelligence']['research'], [])
+            self.assertIsNone(result['intelligence']['as_of'])
+            self.assertEqual(result['issues'], [])

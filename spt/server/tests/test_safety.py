@@ -1,6 +1,7 @@
 """Regression tests for source writes through cache and root replacement."""
 from __future__ import annotations
 import io
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,7 +11,7 @@ from unittest.mock import patch
 from ..api import Handler
 from ..config import Config
 from ..covers import generate
-from ..files import FileError, contained
+from ..files import DIR_FD, FileError, contained
 from ..indexer import Indexer
 from ..streaming import send_file
 from ..scan import scan_works
@@ -72,6 +73,7 @@ class CacheSafetyTests(unittest.TestCase):
         with self.assertRaises(FileError):
             handler.work_root(work)
 
+    @unittest.skipUnless(DIR_FD, "POSIX allows unlinking an open descriptor; Windows uses checked paths")
     def test_stream_retains_descriptor_after_name_change(self) -> None:
         source = self.paths["环绕"] / "note.txt"
         outside = self.root / "outside.txt"
@@ -82,6 +84,7 @@ class CacheSafetyTests(unittest.TestCase):
         send_file(handler, path, anchor=self.config.resolved_workspace)
         self.assertEqual(handler.wfile.getvalue(), b"original content")
 
+    @unittest.skipIf(os.name == "nt", "Windows denies replacing this open temporary file")
     def test_thumbnail_writes_to_held_descriptor_only(self) -> None:
         work = next(work for work in scan_works(self.config.resolved_workspace)
                     if work.title == "火光")
@@ -103,6 +106,30 @@ class CacheSafetyTests(unittest.TestCase):
                 generate("ffmpeg", source, target, work, self.config.cache)
         self.assertEqual(protected.read_bytes(), b"untouched")
         self.assertEqual(list(target.parent.iterdir()), [])
+
+
+    @unittest.skipUnless(os.name == "nt", "Windows open-file protection")
+    def test_windows_thumbnail_replacement_is_denied_without_touching_source(self) -> None:
+        work = next(work for work in scan_works(self.config.resolved_workspace)
+                    if work.title == "火光")
+        target = self.config.cache / "thumbs" / "cover.jpg"
+        target.parent.mkdir(parents=True)
+        protected = self.paths["环绕"] / "protected.jpg"
+        write(protected, b"untouched")
+
+        def replace_open_output(*args: Any, **kwargs: Any) -> None:
+            temporary = Path(kwargs["stdout"].name)
+            temporary.unlink()  # Windows must deny replacement while the writer owns the handle.
+            temporary.symlink_to(protected)
+            kwargs["stdout"].write(b"new image")
+
+        source = Path(work.path) / work.finals[0].path
+        with patch("spt.server.covers.subprocess.run", replace_open_output):
+            generate("ffmpeg", source, target, work, self.config.cache)
+        self.assertEqual(protected.read_bytes(), b"untouched")
+        self.assertFalse(target.exists())
+        self.assertEqual(list(target.parent.iterdir()), [])
+        self.assertIn("封面抽帧失败；原视频未修改", work.issues)
 
 
 class SwappingHandler:

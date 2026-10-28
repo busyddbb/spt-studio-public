@@ -12,6 +12,7 @@ from pathlib import Path
 from .facts import superseded_versions
 from .files import FileError, read_text, safe_files, timestamp
 from .models import Item, Work
+from .parsing import normalize_newlines
 
 SECTIONS = {"素材": "material", "提示词": "prompt", "记录": "record",
             "skills": "skill", "便签": "note"}
@@ -41,6 +42,7 @@ def item_id(*parts: str) -> str:
 
 
 def split_frontmatter(text: str) -> tuple[dict[str, object], str]:
+    text = normalize_newlines(text).lstrip("\ufeff")
     if not text.startswith("---"):
         return {}, text
     match = re.match(r"^---[ \t]*\n(.*?)\n---[ \t]*(?:\n|$)", text, re.S)

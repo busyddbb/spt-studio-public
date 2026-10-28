@@ -1,5 +1,6 @@
 """Native-origin mount: new data and existing publishing stay independent."""
 from __future__ import annotations
+from contextlib import closing
 
 import http.client
 import json
@@ -94,7 +95,7 @@ class WorkbenchMountTests(unittest.TestCase):
 
     def test_legacy_identity_read_is_readonly_and_excludes_payload(self) -> None:
         database = self.root / "identities.sqlite3"
-        with sqlite3.connect(database) as db:
+        with closing(sqlite3.connect(database)) as db, db:
             db.execute("CREATE TABLE accounts (id,platform,handle,payload)")
             db.execute("INSERT INTO accounts VALUES (?,?,?,?)",
                        ("identity", "instagram", "local", "PRIVATE"))
@@ -119,7 +120,7 @@ class WorkbenchMountTests(unittest.TestCase):
         with patch.object(core, "DB", database):
             core.create_account({"platform": "tiktok", "handle": "walled",
                                  "name": "本人", "brand": "客户"})
-            with sqlite3.connect(database) as db:
+            with closing(sqlite3.connect(database)) as db, db:
                 db.execute("PRAGMA wal_checkpoint(TRUNCATE)")
             for suffix in ("-wal", "-shm"):
                 side = database.with_name(database.name + suffix)

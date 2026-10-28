@@ -17,7 +17,7 @@ import threading
 import time
 import uuid
 from urllib.parse import urlsplit
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 
 if __package__:
     from . import core
@@ -62,30 +62,26 @@ def _db_path():
 def _connect(db_path=None):
     path = Path(db_path or _db_path())
     path.parent.mkdir(parents=True, exist_ok=True)
-    c = sqlite3.connect(path, timeout=10)
-    c.row_factory = sqlite3.Row
-    c.execute('PRAGMA journal_mode=WAL')
-    c.executescript('''
-      CREATE TABLE IF NOT EXISTS media_upload_jobs (
-        id TEXT PRIMARY KEY, path TEXT NOT NULL, name TEXT NOT NULL,
-        size INTEGER NOT NULL, mtime_ns INTEGER NOT NULL, device INTEGER NOT NULL,
-        inode INTEGER NOT NULL, mime_type TEXT NOT NULL, status TEXT NOT NULL,
-        progress_bytes INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL, provider_id TEXT, provider_path TEXT,
-        error_code TEXT, attempt_count INTEGER NOT NULL DEFAULT 0,
-        cancel_requested INTEGER NOT NULL DEFAULT 0);
-      CREATE INDEX IF NOT EXISTS media_upload_status ON media_upload_jobs(status, created_at);
-      CREATE TABLE IF NOT EXISTS media_local_uploads (
-        id TEXT PRIMARY KEY, name TEXT NOT NULL, size INTEGER NOT NULL,
-        received INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL,
-        created_at TEXT NOT NULL, job_id TEXT);
-    ''')
-    try:
+    with closing(sqlite3.connect(path, timeout=10)) as c:
+        c.row_factory = sqlite3.Row
+        c.execute('PRAGMA journal_mode=WAL')
+        c.executescript('''
+          CREATE TABLE IF NOT EXISTS media_upload_jobs (
+            id TEXT PRIMARY KEY, path TEXT NOT NULL, name TEXT NOT NULL,
+            size INTEGER NOT NULL, mtime_ns INTEGER NOT NULL, device INTEGER NOT NULL,
+            inode INTEGER NOT NULL, mime_type TEXT NOT NULL, status TEXT NOT NULL,
+            progress_bytes INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL, provider_id TEXT, provider_path TEXT,
+            error_code TEXT, attempt_count INTEGER NOT NULL DEFAULT 0,
+            cancel_requested INTEGER NOT NULL DEFAULT 0);
+          CREATE INDEX IF NOT EXISTS media_upload_status ON media_upload_jobs(status, created_at);
+          CREATE TABLE IF NOT EXISTS media_local_uploads (
+            id TEXT PRIMARY KEY, name TEXT NOT NULL, size INTEGER NOT NULL,
+            received INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL,
+            created_at TEXT NOT NULL, job_id TEXT);
+        ''')
         with c:
             yield c
-    finally:
-        c.close()
-
 
 def _provider(db_path=None):
     return {'name': 'Postiz', 'configured': bool(_read_key(db_path)), 'endpoint': ENDPOINT,

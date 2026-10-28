@@ -22,6 +22,11 @@ VERIFY_PATTERN = re.compile(
     r"公开.{0,12}核验|逐字.{0,8}一致)")
 
 
+def normalize_newlines(text: str) -> str:
+    """Use logical lines for Markdown from Windows, macOS or mixed editors."""
+    return text.replace("\r\n", "\n").replace("\r", "\n")
+
+
 def platform_name(text: str) -> str | None:
     clean = re.sub(r"[\s#·：:]", "", text).lower().strip()
     return ALIASES.get(clean)
@@ -39,6 +44,7 @@ def url_platform(url: str) -> str | None:
 
 
 def headings(text: str, level: int) -> list[tuple[str, str]]:
+    text = normalize_newlines(text)
     pattern = re.compile(rf"^{'#' * level} (.+)$", re.MULTILINE)
     matches = list(pattern.finditer(text))
     if not matches:

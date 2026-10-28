@@ -15,7 +15,7 @@ import re
 import sqlite3
 import uuid
 import threading
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -41,55 +41,52 @@ class MediaSelectionError(Exception):
 
 @contextmanager
 def _db():
-    c = core.connect()
-    # Schema creation is process-wide and keyed by the actual DB inode.  This
-    # keeps polling connections cheap while still initializing a recreated
-    # temporary database at the same path.
-    db_path = Path(core.DB).expanduser().resolve()
-    try:
-        stat = db_path.stat()
-        schema_key = (str(db_path), stat.st_dev, stat.st_ino)
-    except OSError:
-        schema_key = (str(db_path), None, None)
-    global _SCHEMA_KEYS
-    with _SCHEMA_LOCK:
-        if schema_key not in _SCHEMA_KEYS:
-            c.executescript("""
-      CREATE TABLE IF NOT EXISTS publishing_queue (
-        id TEXT PRIMARY KEY, work_id TEXT NOT NULL, account_id TEXT NOT NULL,
-        draft_id TEXT NOT NULL, native_job_id TEXT, fingerprint TEXT NOT NULL,
-        payload TEXT NOT NULL, state TEXT NOT NULL, executor_id TEXT, created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL, UNIQUE(work_id, account_id, fingerprint));
-      CREATE INDEX IF NOT EXISTS publishing_queue_state ON publishing_queue(state, created_at);
-      CREATE TABLE IF NOT EXISTS publishing_defaults (
-        account_id TEXT PRIMARY KEY, payload TEXT NOT NULL, updated_at TEXT NOT NULL);
-    """)
-            # Older databases created native_job_id as NOT NULL, but a job only
-            # gets its native id after claim(); rebuild that table, keeping rows.
-            if any(col[1] == "native_job_id" and col[3] for col in c.execute("PRAGMA table_info(publishing_queue)")):
+    with closing(core.connect()) as c:
+        # Schema creation is process-wide and keyed by the actual DB inode.  This
+        # keeps polling connections cheap while still initializing a recreated
+        # temporary database at the same path.
+        db_path = Path(core.DB).expanduser().resolve()
+        try:
+            stat = db_path.stat()
+            schema_key = (str(db_path), stat.st_dev, stat.st_ino)
+        except OSError:
+            schema_key = (str(db_path), None, None)
+        global _SCHEMA_KEYS
+        with _SCHEMA_LOCK:
+            if schema_key not in _SCHEMA_KEYS:
                 c.executescript("""
-      DROP INDEX IF EXISTS publishing_queue_state;
-      ALTER TABLE publishing_queue RENAME TO publishing_queue_old;
-      CREATE TABLE publishing_queue (
-        id TEXT PRIMARY KEY, work_id TEXT NOT NULL, account_id TEXT NOT NULL,
-        draft_id TEXT NOT NULL, native_job_id TEXT, fingerprint TEXT NOT NULL,
-        payload TEXT NOT NULL, state TEXT NOT NULL, executor_id TEXT, created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL, UNIQUE(work_id, account_id, fingerprint));
-      INSERT INTO publishing_queue SELECT * FROM publishing_queue_old;
-      DROP TABLE publishing_queue_old;
-      CREATE INDEX publishing_queue_state ON publishing_queue(state, created_at);
-    """)
+          CREATE TABLE IF NOT EXISTS publishing_queue (
+            id TEXT PRIMARY KEY, work_id TEXT NOT NULL, account_id TEXT NOT NULL,
+            draft_id TEXT NOT NULL, native_job_id TEXT, fingerprint TEXT NOT NULL,
+            payload TEXT NOT NULL, state TEXT NOT NULL, executor_id TEXT, created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL, UNIQUE(work_id, account_id, fingerprint));
+          CREATE INDEX IF NOT EXISTS publishing_queue_state ON publishing_queue(state, created_at);
+          CREATE TABLE IF NOT EXISTS publishing_defaults (
+            account_id TEXT PRIMARY KEY, payload TEXT NOT NULL, updated_at TEXT NOT NULL);
+        """)
+                # Older databases created native_job_id as NOT NULL, but a job only
+                # gets its native id after claim(); rebuild that table, keeping rows.
+                if any(col[1] == "native_job_id" and col[3] for col in c.execute("PRAGMA table_info(publishing_queue)")):
+                    c.executescript("""
+          DROP INDEX IF EXISTS publishing_queue_state;
+          ALTER TABLE publishing_queue RENAME TO publishing_queue_old;
+          CREATE TABLE publishing_queue (
+            id TEXT PRIMARY KEY, work_id TEXT NOT NULL, account_id TEXT NOT NULL,
+            draft_id TEXT NOT NULL, native_job_id TEXT, fingerprint TEXT NOT NULL,
+            payload TEXT NOT NULL, state TEXT NOT NULL, executor_id TEXT, created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL, UNIQUE(work_id, account_id, fingerprint));
+          INSERT INTO publishing_queue SELECT * FROM publishing_queue_old;
+          DROP TABLE publishing_queue_old;
+          CREATE INDEX publishing_queue_state ON publishing_queue(state, created_at);
+        """)
+                c.commit()
+                _SCHEMA_KEYS.add(schema_key)
+        try:
+            yield c
             c.commit()
-            _SCHEMA_KEYS.add(schema_key)
-    try:
-        yield c
-        c.commit()
-    except Exception:
-        c.rollback()
-        raise
-    finally:
-        c.close()
-
+        except Exception:
+            c.rollback()
+            raise
 
 _SCHEMA_LOCK = threading.Lock()
 _SCHEMA_KEYS: set[tuple[str, int | None, int | None]] = set()

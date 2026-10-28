@@ -1,6 +1,7 @@
 """Local, evidence-preserving media operations. No remote publishing side effects."""
 from __future__ import annotations
 import csv, hashlib, io, json, os, sqlite3, uuid
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 import sys
@@ -37,18 +38,20 @@ class ValidationError(ValueError): pass
 
 def now(): return datetime.now(timezone.utc).isoformat(timespec='seconds')
 def connect():
+ """Open an initialized database; callers own and must close the connection."""
  DB.parent.mkdir(parents=True, exist_ok=True)
- c=sqlite3.connect(DB,timeout=10); c.row_factory=sqlite3.Row
- c.execute('PRAGMA journal_mode=WAL')
- c.executescript('''CREATE TABLE IF NOT EXISTS observations (id TEXT PRIMARY KEY, kind TEXT NOT NULL, dataset TEXT NOT NULL, natural_key TEXT NOT NULL, observed_at TEXT NOT NULL, payload TEXT NOT NULL);
+ c=sqlite3.connect(DB,timeout=10)
+ try:
+  c.row_factory=sqlite3.Row
+  c.execute('PRAGMA journal_mode=WAL')
+  c.executescript('''CREATE TABLE IF NOT EXISTS observations (id TEXT PRIMARY KEY, kind TEXT NOT NULL, dataset TEXT NOT NULL, natural_key TEXT NOT NULL, observed_at TEXT NOT NULL, payload TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS drafts (id TEXT PRIMARY KEY, payload TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS accounts (id TEXT PRIMARY KEY, platform TEXT NOT NULL, handle TEXT NOT NULL, payload TEXT NOT NULL, UNIQUE(platform,handle));
  CREATE TABLE IF NOT EXISTS imports (id TEXT PRIMARY KEY, filename TEXT, kind TEXT, created_at TEXT, rows_count INTEGER);
  CREATE TABLE IF NOT EXISTS audit (id TEXT PRIMARY KEY, created_at TEXT, action TEXT, detail TEXT);
  CREATE TABLE IF NOT EXISTS core_schema_migrations (name TEXT PRIMARY KEY, applied_at TEXT NOT NULL);''')
- migration='draft_platform_variants_v1'
- if not c.execute('SELECT 1 FROM core_schema_migrations WHERE name=?',(migration,)).fetchone():
-  try:
+  migration='draft_platform_variants_v1'
+  if not c.execute('SELECT 1 FROM core_schema_migrations WHERE name=?',(migration,)).fetchone():
    with c:
     c.execute('BEGIN IMMEDIATE')
     if not c.execute('SELECT 1 FROM core_schema_migrations WHERE name=?',(migration,)).fetchone():
@@ -58,10 +61,21 @@ def connect():
        draft['platform_variants']={}
        c.execute('UPDATE drafts SET payload=? WHERE id=?',(json.dumps(draft,ensure_ascii=False),row['id']))
      c.execute('INSERT INTO core_schema_migrations VALUES(?,?)',(migration,now()))
-  except Exception:
-   c.close()
-   raise
- return c
+  return c
+ except BaseException:
+  c.close()
+  raise
+
+
+@contextmanager
+def connection():
+ """Commit or roll back a database operation and always release its file handles."""
+ c=connect()
+ try:
+  with c:
+   yield c
+ finally:
+  c.close()
 
 def audit(c,action,detail):
  c.execute('INSERT INTO audit VALUES(?,?,?,?)',(uuid.uuid4().hex,now(),action,json.dumps(detail,ensure_ascii=False)))
@@ -141,7 +155,7 @@ def import_csv(kind,csv_text,filename='数据导入.csv'):
    records.append((record,natural,observed))
   except ValidationError as e: raise ValidationError(f'第 {i} 行：{e}')
  inserted=updated=0
- with connect() as c:
+ with connection() as c:
   for record,natural,observed in records:
    exists=c.execute('SELECT 1 FROM observations WHERE id=?',(record['id'],)).fetchone()
    updated+=int(bool(exists)); inserted+=int(not exists)
@@ -184,13 +198,13 @@ def account_key(p,handle): return hashlib.sha256((p+'|'+handle).encode()).hexdig
 def create_account(data):
  p=platform(required(data,'platform')); handle=required(data,'handle')
  a={'id':account_key(p,handle),'platform':p,'handle':handle,'name':required(data,'name'),'brand':str(data.get('brand','未分组')).strip() or '未分组','notes':str(data.get('notes',''))[:4000],'status':'本地账号档案 · 未授权','metric_count':0}
- with connect() as c:
+ with connection() as c:
   if c.execute('SELECT 1 FROM accounts WHERE platform=? AND handle=?',(p,handle)).fetchone(): raise ValidationError('同平台的此账号已存在')
   c.execute('INSERT INTO accounts VALUES(?,?,?,?)',(a['id'],p,handle,json.dumps(a,ensure_ascii=False))); audit(c,'create_account',{'id':a['id'],'platform':p})
  return {'account':a}
 
 def update_account(identifier,data):
- with connect() as c:
+ with connection() as c:
   r=c.execute('SELECT payload FROM accounts WHERE id=?',(identifier,)).fetchone()
   if r: a=json.loads(r['payload'])
   else:
@@ -208,7 +222,7 @@ def update_account(identifier,data):
 
 def state(dataset='real',account_id=None):
  if dataset not in ('real','demo'): raise ValidationError('dataset 必须为 real 或 demo')
- with connect() as c:
+ with connection() as c:
   raw=c.execute('SELECT * FROM observations WHERE dataset=? ORDER BY observed_at ASC',('real',)).fetchall()
   drafts=[json.loads(r['payload']) for r in c.execute('SELECT payload FROM drafts ORDER BY rowid DESC')]
   imports=[dict(r) for r in c.execute('SELECT * FROM imports ORDER BY created_at DESC LIMIT 50')]
@@ -280,12 +294,12 @@ def draft_values(data,previous=None):
 
 def create_draft(data):
  d=draft_values(data); d.update({'id':uuid.uuid4().hex,'status':'draft','created_at':now(),'updated_at':now(),'delivery':'local_only'})
- with connect() as c:
+ with connection() as c:
   c.execute('INSERT INTO drafts VALUES(?,?)',(d['id'],json.dumps(d,ensure_ascii=False))); audit(c,'create_draft',{'id':d['id']})
  return {'draft':d}
 
 def update_draft(identifier,data):
- with connect() as c:
+ with connection() as c:
   row=c.execute('SELECT payload FROM drafts WHERE id=?',(identifier,)).fetchone()
   if not row: raise ValidationError('草稿不存在')
   previous=json.loads(row['payload']); d=draft_values(data,previous)

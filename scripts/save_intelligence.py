@@ -25,6 +25,9 @@ HISTORY = TARGET.parent / ".cache" / "sources-history"
 
 
 def main(argv: list[str]) -> int:
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     if len(argv) != 1:
         print("用法：python3 save_sources.py <草稿.json>", file=sys.stderr)
         return 2
@@ -34,7 +37,7 @@ def main(argv: list[str]) -> int:
               file=sys.stderr)
         return 2
     check = subprocess.run([sys.executable, "-I", str(VALIDATOR), str(draft)],
-                           capture_output=True, text=True)
+                           capture_output=True, text=True, encoding="utf-8")
     sys.stdout.write(check.stdout)
     sys.stderr.write(check.stderr)
     if check.returncode:

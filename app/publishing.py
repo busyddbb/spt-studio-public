@@ -58,7 +58,7 @@ def _account(identifier):
 
 
 def _profiles(create_for=None):
-    with core.connect() as connection:
+    with core.connection() as connection:
         connection.execute('''CREATE TABLE IF NOT EXISTS publish_web_profiles (
             account_id TEXT PRIMARY KEY, profile_id TEXT UNIQUE NOT NULL,
             created_at TEXT NOT NULL)''')
@@ -175,7 +175,7 @@ def _with_receipts(connection, jobs):
 
 
 def _upload_jobs():
-    with core.connect() as connection:
+    with core.connection() as connection:
         _upload_table(connection)
         return _with_receipts(connection, [json.loads(row['payload']) for row in connection.execute(
             'SELECT payload FROM native_upload_jobs ORDER BY rowid DESC LIMIT 100')])
@@ -184,7 +184,7 @@ def _upload_jobs():
 def _job(identifier):
     if not isinstance(identifier, str) or not identifier or len(identifier) > 100:
         raise core.ValidationError('上传任务ID无效')
-    with core.connect() as connection:
+    with core.connection() as connection:
         _upload_table(connection)
         row = connection.execute('SELECT payload FROM native_upload_jobs WHERE id=?', (identifier,)).fetchone()
         if row is None:
@@ -214,7 +214,7 @@ def prepare_upload(arguments):
            'target': 'image' if kinds == {'image'} else 'video', 'state': 'prepared',
            'message': '等待开始上传', 'created_at': core.now(), 'updated_at': core.now(),
            'source': 'native_official_web', 'published': False}
-    with core.connect() as connection:
+    with core.connection() as connection:
         _upload_table(connection)
         # Serialize the check and insert so double-clicks cannot start two jobs.
         connection.execute('BEGIN IMMEDIATE')
@@ -241,7 +241,7 @@ def update_upload(arguments):
     if not isinstance(message, str):
         raise core.ValidationError('上传进度说明无效')
     message = message[:1000]   # a long diagnostic is kept, cut, rather than lost
-    with core.connect() as connection:
+    with core.connection() as connection:
         _upload_table(connection)
         connection.execute('BEGIN IMMEDIATE')
         row = connection.execute('SELECT payload FROM native_upload_jobs WHERE id=?', (identifier,)).fetchone()

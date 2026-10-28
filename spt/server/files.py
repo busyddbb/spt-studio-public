@@ -175,7 +175,7 @@ def move_to_trash(path: Path, trash_dir: Path | None = None) -> Path:
 
 def contained(root: Path, value: str) -> Path:
     candidate = Path(value)
-    if candidate.is_absolute() or "\x00" in value or ".." in candidate.parts:
+    if candidate.anchor or "\x00" in value or ".." in candidate.parts:
         raise FileError("文件路径必须是作品内的相对路径")
     resolved = (root / candidate).resolve(strict=True)
     if not resolved.is_relative_to(root.resolve()) or not resolved.is_file():

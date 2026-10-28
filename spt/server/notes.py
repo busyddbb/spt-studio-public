@@ -14,6 +14,7 @@ updated_at the person saw is refused when the file has changed since.
 from __future__ import annotations
 import datetime as dt
 import json
+import math
 import os
 import re
 import secrets
@@ -23,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 from .files import BINARY, NOFOLLOW, NONBLOCK, FileError, is_link, move_to_trash, write_atomic
+from .parsing import normalize_newlines
 
 FOLDER = "便签"
 LAYOUT = ".布局.json"
@@ -157,6 +159,7 @@ def note_date(value: object) -> str:
 
 def parse(text: str) -> tuple[str, str, str]:
     """Return (color, date, body) from a note file."""
+    text = normalize_newlines(text).lstrip("\ufeff")
     if text.startswith("---\n"):
         end = text.find("\n---", 4)
         if end != -1:
@@ -213,9 +216,14 @@ class Notes:
             value = {}
         ropes = [name for name in value.get("ropes", []) if isinstance(name, str)]
         order = value.get("order") if isinstance(value.get("order"), dict) else {}
+        taken_down = value.get("taken_down") if isinstance(value.get("taken_down"), dict) else {}
         return {"ropes": ropes, "order": {key: [item for item in items if isinstance(item, str)]
                                            for key, items in order.items()
-                                           if isinstance(items, list)}}
+                                           if isinstance(items, list)},
+                "taken_down": {key: moment for key, moment in taken_down.items()
+                               if isinstance(key, str) and isinstance(moment, (int, float))
+                               and not isinstance(moment, bool) and math.isfinite(moment)
+                               and moment >= 0}}
 
     def save_layout(self, layout: dict[str, Any]) -> None:
         write_atomic(self.root / LAYOUT, json.dumps(layout, ensure_ascii=False, indent=1))
@@ -257,10 +265,13 @@ class Notes:
     def shelf(self) -> list[dict[str, Any]]:
         """The most recently taken-down notes, newest first, for the 「已撤下」 drawer.
 
-        Moving a file keeps its edit time but updates its status-change time, so
-        that later time is when the note was taken down.
+        The layout records this action without changing the note's edit time.
+        Files taken down before that metadata existed use their filesystem time
+        as a fallback; Windows ctime is creation time, not a move timestamp.
         """
         base = self.root / TAKEN_DOWN
+        taken_down = self.layout()["taken_down"]
+        saved_rank = {key: index for index, key in enumerate(taken_down)}
         found = []
         try:
             if self.root.is_symlink() or base.is_symlink() or not base.is_dir():
@@ -278,12 +289,14 @@ class Notes:
                     except OSError:
                         continue
                     if stat.S_ISREG(status.st_mode):
-                        found.append((max(status.st_ctime, status.st_mtime), path.stem, name, path))
+                        key = f"{name}/{path.stem}"
+                        found.append((taken_down.get(key, max(status.st_ctime, status.st_mtime)),
+                                      saved_rank.get(key, -1), path.stem, name, path))
         except OSError:
             return []
-        found.sort(key=lambda entry: (entry[0], entry[1]), reverse=True)
+        found.sort(key=lambda entry: (entry[0], entry[1], entry[2]), reverse=True)
         shelf = []
-        for moment, _, rope, path in found:
+        for moment, _, _, rope, path in found:
             note = read_note(path, rope)
             if note is None:
                 continue
@@ -373,9 +386,12 @@ class Notes:
             index = shown.index(identifier) if identifier in shown else len(shown)
             shelf.mkdir(parents=True, exist_ok=True)
             os.replace(source, shelf / source.name)
+            key = f"{rope}/{identifier}"
+            layout["taken_down"].pop(key, None)
+            layout["taken_down"][key] = now().timestamp()
             if identifier in layout["order"].get(rope, []):
                 layout["order"][rope].remove(identifier)
-                self.save_layout(layout)
+            self.save_layout(layout)
             return {"id": identifier, "rope": rope, "index": index,
                     "kept_in": f"{FOLDER}/{TAKEN_DOWN}/{rope}"}
 
@@ -407,6 +423,7 @@ class Notes:
             os.replace(source, target)
             layout["ropes"] = names if rope in names else names + [rope]
             layout["order"][rope] = shown
+            layout["taken_down"].pop(f"{rope}/{identifier}", None)
             self.save_layout(layout)
             return read_note(target, rope) or {"id": identifier, "rope": rope}
 
@@ -425,7 +442,11 @@ class Notes:
                     raise FileError("便签文件不能是替身")
                 if not source.is_file():
                     raise ValueError(GONE)
-                return {"id": identifier, "rope": rope, "trashed": move_to_trash(source).name}
+                trashed = move_to_trash(source)
+                layout = self.layout()
+                layout["taken_down"].pop(f"{rope}/{identifier}", None)
+                self.save_layout(layout)
+                return {"id": identifier, "rope": rope, "trashed": trashed.name}
             source = self.note_path(rope, identifier)
             if not source.is_file():
                 raise FileNotFoundError(source)
@@ -457,6 +478,9 @@ class Notes:
                 else:
                     files += 1
                 move_to_trash(entry)
+            layout = self.layout()
+            layout["taken_down"] = {}
+            self.save_layout(layout)
             return {"trashed": files}
 
     def rope(self, value: dict[str, Any]) -> dict[str, Any]:

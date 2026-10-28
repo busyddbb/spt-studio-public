@@ -108,7 +108,7 @@ class IndexerTests(unittest.TestCase):
         root = self.paths["火光"]
         write(self.root / "private.txt", "outside")
         (root / "escape.txt").symlink_to(self.root / "private.txt")
-        for value in ("../private.txt", "/etc/passwd", "escape.txt"):
+        for value in ("../private.txt", str((self.root / "private.txt").resolve()), "escape.txt"):
             with self.subTest(value=value), self.assertRaises(FileError):
                 contained(root, value)
         with patch("spt.server.files.HASH_LIMIT", 1):

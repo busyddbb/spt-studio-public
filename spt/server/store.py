@@ -50,9 +50,9 @@ class Store:
     def connect(self) -> Iterator[sqlite3.Connection]:
         safe_database(self.database)
         connection = sqlite3.connect(self.database, timeout=10)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys=ON")
         try:
+            connection.row_factory = sqlite3.Row
+            connection.execute("PRAGMA foreign_keys=ON")
             with connection:
                 yield connection
         finally:

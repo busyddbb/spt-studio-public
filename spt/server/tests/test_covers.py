@@ -74,7 +74,8 @@ class CoverTests(unittest.TestCase):
             def frame(source, target, work, cache):
                 target.write_bytes(b"frame")
 
-            with patch("spt.server.covers.shutil.which", lambda name: "/usr/bin/" + name), \
+            with patch("spt.server.covers.on_mac", return_value=True), \
+                    patch("spt.server.covers.shutil.which", lambda name: "/usr/bin/" + name), \
                     patch("spt.server.covers.generate", side_effect=no_frame) as ffmpeg, \
                     patch("spt.server.covers.quick_look", side_effect=frame) as quick:
                 build(Path("clip.mp4"), target, owner, Path(folder))

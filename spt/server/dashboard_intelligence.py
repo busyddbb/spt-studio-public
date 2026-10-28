@@ -11,7 +11,7 @@ from .timezones import pacific
 def intelligence(project_root: Path, rows: list[dict[str, str]],
                  issues: list[dict[str, str]]) -> dict[str, Any]:
     path = Path(__file__).with_name("dashboard_sources.json")
-    saved = load_optional(path, "json", issues)
+    saved = load_optional(path, "json", issues) if path.exists() else {}
     if not isinstance(saved, dict):
         saved = {}
     candidates = [candidate(row) for row in rows]

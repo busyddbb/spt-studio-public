@@ -166,6 +166,9 @@ def summary(data: dict[str, Any]) -> str:
 
 
 def main(argv: list[str]) -> int:
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     if len(argv) != 1 or argv[0] in ("-h", "--help"):
         print(USAGE, file=sys.stderr)
         return 2

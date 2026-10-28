@@ -1,5 +1,6 @@
 """Platform-specific draft copy and its review boundary, on temporary databases."""
 from __future__ import annotations
+from contextlib import closing
 import json
 from pathlib import Path
 import sqlite3
@@ -38,16 +39,16 @@ class DraftVariantTests(unittest.TestCase):
                     'account_ids': [], 'media_ids': [], 'scheduled_at': '', 'status': 'approved',
                     'created_at': '2026-10-01T00:00:00+00:00', 'updated_at': '2026-10-02T00:00:00+00:00',
                     'delivery': 'local_only'}
-        with sqlite3.connect(self.path) as connection:
+        with closing(sqlite3.connect(self.path)) as connection, connection:
             connection.execute('CREATE TABLE drafts(id TEXT PRIMARY KEY,payload TEXT NOT NULL)')
             connection.execute('INSERT INTO drafts VALUES(?,?)', ('legacy', json.dumps(original)))
         expected = {**original, 'platform_variants': {}}
         self.assertEqual(self.saved('legacy'), expected)
-        with sqlite3.connect(self.path) as connection:
+        with closing(sqlite3.connect(self.path)) as connection, connection:
             self.assertEqual(json.loads(connection.execute('SELECT payload FROM drafts').fetchone()[0]), expected)
             first = connection.execute('SELECT * FROM core_schema_migrations').fetchall()
         self.assertEqual(self.saved('legacy'), expected)
-        with sqlite3.connect(self.path) as connection:
+        with closing(sqlite3.connect(self.path)) as connection, connection:
             self.assertEqual(connection.execute('SELECT * FROM core_schema_migrations').fetchall(), first)
         self.assertEqual(len(first), 1)
         self.assertEqual(core.export_drafts()['drafts'][0]['platform_variants'], {})

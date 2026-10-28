@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from .files import FileError, read_text, write_atomic
+from .parsing import normalize_newlines
 
 CLIENT_FILE = "客户.md"
 OWN = "自家"          # 用户's own work: always kind "own", first among codes not in the file
@@ -203,6 +204,10 @@ def render_table(groups: list[dict[str, Any]]) -> str:
 
 def rewrite(text: str, table: str) -> str:
     """The file with its table replaced; text before and after the table is kept."""
+    # read_text deliberately returns raw bytes decoded as text. Canonicalize
+    # before combining them with rendered LF rows; Windows' text writer must
+    # not receive pre-existing CRLF and turn it into CRCRLF.
+    text, table = normalize_newlines(text), normalize_newlines(table)
     lines = text.lstrip("﻿").splitlines(keepends=True)
     found = find_table([line.rstrip("\r\n") for line in lines])
     if found is None:
